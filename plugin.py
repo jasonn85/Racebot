@@ -123,7 +123,7 @@ class IracingConnection(object):
 
 
 class Racebot(callbacks.Plugin):
-    """Add the help for "@plugin help Racetest" here
+    """Add the help for "@plugin help Racebot" here
     This should describe *how* to use this plugin."""
 
     def __init__(self, irc):
