@@ -78,8 +78,6 @@ class IracingConnection(object):
         try:
             response = self.session.post("https://members.iracing.com/membersite/Login", data=loginData)
 
-            logger.info("Login response:\n\n" + response.content)
-
         except Exception as e:
             logger.warning("Caught exception logging in: " + str(e))
             return None
