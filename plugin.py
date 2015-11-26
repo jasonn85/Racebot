@@ -138,7 +138,7 @@ class Racebot(callbacks.Plugin):
         self.iracingConnection = IracingConnection(username, password)
 
 
-    def raceronline(self, irc, msg, args):
+    def racers(self, irc, msg, args):
         """takes no arguments
 
         Does things.
@@ -161,7 +161,7 @@ class Racebot(callbacks.Plugin):
         except utils.web.Error as e:
             irc.reply("Unable to open iRacing URL: " + str(e))
 
-    raceronline = wrap(raceronline)
+    racers = wrap(racers)
 
 
 Class = Racebot
