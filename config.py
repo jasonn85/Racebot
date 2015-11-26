@@ -37,7 +37,14 @@ def configure(advanced):
     # user or not.  You should effect your configuration by manipulating the
     # registry as appropriate.
     from supybot.questions import expect, anything, something, yn
-    conf.registerPlugin('Racebot', True)
+    Racebot = conf.registerPlugin('Racebot', True)
+
+    username = something("""What iRacing user name (email address) should be used to query for users?
+                            This account must watch or friend any user to be known to this bot.""")
+    password = something("""What is the password for that iRacing account?""")
+
+    Racebot.iRacingUsername.setValue(username)
+    Racebot.iRacingPassword.setValue(password)
 
 
 
