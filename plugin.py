@@ -268,7 +268,7 @@ class Racebot(callbacks.Plugin):
         # TODO: Loop through all users, finding those newly registered for races and non-races
         # For each user found, loop through all channels and broadcast as appropriate.
         for channel in irc.state.channels:
-            isRaceSession = True # TODO: Replace this placeholder
+            isRaceSession = False # TODO: Replace this placeholder
             relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
             shouldBroadcast = self.registryValue(relevantConfigValue, channel)
 
