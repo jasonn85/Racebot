@@ -29,8 +29,9 @@
 ###
 
 """
-Add a description of the plugin (to be presented to the user inside the wizard)
-here.  This should describe *what* the plugin does.
+iRacing friend tracking bot.
+Shows channel messages when tracked users are registered for a race.
+Allows users to join or spectate other users in race.
 """
 
 import supybot
