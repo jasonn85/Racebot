@@ -137,7 +137,6 @@ class Racebot(callbacks.Plugin):
     def __init__(self, irc):
         self.__parent = super(Racebot, self)
         self.__parent.__init__(irc)
-        self.irc = irc
 
         username = self.registryValue('iRacingUsername')
         password = self.registryValue('iRacingPassword')
@@ -147,13 +146,15 @@ class Racebot(callbacks.Plugin):
         # Check for newly registered racers every x time, (initially five minutes.)
         # This should perhaps ramp down in frequency during non-registration times and ramp up a few minutes
         #  before race start times (four times per hour.)  For now, we fire every five minutes.
-        schedule.addPeriodicEvent(doBroadcastTick, SCHEDULER_INTERVAL_SECONDS, SCHEDULER_TASK_NAME)
+        def scheduleTick():
+            self.doBroadcastTick(irc)
+        schedule.addPeriodicEvent(scheduleTick, self.SCHEDULER_INTERVAL_SECONDS, self.SCHEDULER_TASK_NAME)
 
     def die(self):
-        schedule.removePeriodicEvent(SCHEDULER_TASK_NAME)
+        schedule.removePeriodicEvent(self.SCHEDULER_TASK_NAME)
         super.die()
 
-    def doBroadcastTick(self):
+    def doBroadcastTick(self, irc):
 
         # TODO: Loop through all users, finding those newly registered for races and non-races
         # For each user found, loop through all channels and broadcast as appropriate.
@@ -163,7 +164,7 @@ class Racebot(callbacks.Plugin):
             shouldBroadcast = self.registryValue(relevantConfigValue, channel)
 
             if shouldBroadcast:
-                self.irc.queueMsg(ircmsgs.privmsg(channel, 'Something about a racer here')) # TODO: Implement message
+                irc.queueMsg(ircmsgs.privmsg(channel, 'Something about a racer here')) # TODO: Implement message
 
     def racers(self, irc, msg, args):
         """takes no arguments
