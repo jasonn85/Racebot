@@ -97,6 +97,8 @@ class IRacingData:
 
 class IRacingConnection(object):
 
+    URL_GET_DRIVER_STATUS = 'http://members.iracing.com/membersite/member/GetDriverStatus'
+
     def __init__(self, username, password):
         self.session = requests.Session()
 
@@ -173,7 +175,7 @@ class IRacingConnection(object):
         return None
 
     def fetchDriverStatusJSON(self, friends=True, studied=True, onlineOnly=False):
-        url = 'http://members.iracing.com/membersite/member/GetDriverStatus?friends=%d&studied=%d&onlineOnly=%d' % (friends, studied, onlineOnly)
+        url = '%s?friends=%d&studied=%d&onlineOnly=%d' % (self.URL_GET_DRIVER_STATUS, friends, studied, onlineOnly)
         response = self.requestURL(url)
         return json.loads(response.text)
 
