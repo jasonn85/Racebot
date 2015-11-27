@@ -89,12 +89,15 @@ class Driver(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def isInASession(self):
+        return 'sessionId' in self.json
+
     def currentSession(self):
         """Returns a newly instantiated Session() object if this racer is registered for a session"""
-        if 'sessionId' not in self.json:
-            return None
+        if self.isInASession():
+            return Session(self.json)
 
-        return Session(self.json)
+        return None
 
     def nameForPrinting(self):
         if self.nickname is not None:
@@ -124,9 +127,10 @@ class IRacingData:
             driver = Driver(racerJSON)
             self.driversByID[driver.id] = driver
 
-            session = driver.currentSession()
-            if session is not None:
+            if driver.isInASession():
+                session = driver.currentSession()
                 self.sessionByID[session.id] = session
+
 
     def onlineDrivers(self):
         """Returns an array of all online Driver()s"""
