@@ -53,6 +53,10 @@ class Driver(object):
         self.json = json
         self.id = json['custid']
         self.name = json['name']
+        self.sessionId = json.get('sessionId')
+
+        # TODO: Find nickname
+        self.nickname = None
 
         # Hidden users do not have info such as online status
         if 'hidden' not in json:
@@ -62,6 +66,9 @@ class Driver(object):
 
 
     def nameForPrinting(self):
+        if self.nickname is not None:
+            return self.nickname
+
         return self.name.replace('+', ' ')
 
     lastNotifiedSession = None  # The ID of the last race session
