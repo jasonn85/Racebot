@@ -44,6 +44,9 @@ logger = logging.getLogger('supybot')
 class NoCredentialsException(Exception):
     pass
 
+class Driver(object):
+
+
 class IracingConnection(object):
 
     def __init__(self, username, password):
