@@ -47,10 +47,21 @@ class NoCredentialsException(Exception):
     pass
 
 class Driver(object):
-    pass
+
+    lastNotifiedSession = None  # The ID of the last race session
 
 class IRacingData:
-    pass
+
+    driversByID = None
+    latestGetDriverStatusJSON = None
+
+    def __init__(self, iRacingConnection):
+        self.iRacingConnection = iRacingConnection
+
+    def grabData(self):
+        """Refreshes data from iRacing JSON API."""
+        #TODO: Implement
+        pass
 
 class IRacingConnection(object):
 
@@ -129,6 +140,11 @@ class IRacingConnection(object):
 
         return None
 
+    def fetchDriverStatusJSON(self, friends=True, studied=True, onlineOnly=False):
+        url = 'http://members.iracing.com/membersite/member/GetDriverStatus?friends=%d&studied=%d&onlineOnly=%d' % (friends, studied, onlineOnly)
+        response = self.requestURL(url)
+        return json.loads(response.text)
+
 
 class Racebot(callbacks.Plugin):
     """Add the help for "@plugin help Racebot" here
@@ -145,6 +161,7 @@ class Racebot(callbacks.Plugin):
         password = self.registryValue('iRacingPassword')
 
         self.iRacingConnection = IRacingConnection(username, password)
+        self.iRacingData = IRacingData(self.iRacingConnection)
 
         # Check for newly registered racers every x time, (initially five minutes.)
         # This should perhaps ramp down in frequency during non-registration times and ramp up a few minutes
@@ -158,6 +175,9 @@ class Racebot(callbacks.Plugin):
         super(Racebot, self).die()
 
     def doBroadcastTick(self, irc):
+
+        # Refresh data
+        self.iRacingData.grabData()
 
         # TODO: Loop through all users, finding those newly registered for races and non-races
         # For each user found, loop through all channels and broadcast as appropriate.
@@ -178,8 +198,7 @@ class Racebot(callbacks.Plugin):
         logger.info("Command sent by " + str(msg.nick))
 
         try:
-            response = self.iRacingConnection.requestURL("http://members.iracing.com/membersite/member/GetDriverStatus?friends=1&studied=1&onlineOnly=1")
-            info = json.loads(response.text)
+            info = self.iRacingConnection.fetchDriverStatusJSON(friends=True, studied=True, onlineOnly=True)
 
             if info != None:
 
