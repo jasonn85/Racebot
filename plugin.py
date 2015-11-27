@@ -142,7 +142,7 @@ class Racebot(callbacks.Plugin):
     def racers(self, irc, msg, args):
         """takes no arguments
 
-        Does things.
+        Lists all users currently in sessions (not just races)
         """
 
         logger.info("Command sent by " + str(msg.nick))
