@@ -152,7 +152,7 @@ class Racebot(callbacks.Plugin):
 
     def die(self):
         schedule.removePeriodicEvent(self.SCHEDULER_TASK_NAME)
-        super.die()
+        super(Racebot, self).die()
 
     def doBroadcastTick(self, irc):
 
