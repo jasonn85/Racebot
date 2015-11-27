@@ -48,11 +48,27 @@ class NoCredentialsException(Exception):
 
 class Driver(object):
 
+    def __init__(self, json):
+
+        self.json = json
+        self.id = json['custid']
+        self.name = json['name']
+
+        # Hidden users do not have info such as online status
+        if 'hidden' not in json:
+            self.isOnline = json['lastSeen'] > 0
+        else:
+            self.isOnline = False
+
+
+    def nameForPrinting(self):
+        return self.name.replace('+', ' ')
+
     lastNotifiedSession = None  # The ID of the last race session
 
 class IRacingData:
 
-    driversByID = None
+    driversByID = {}
     latestGetDriverStatusJSON = None
 
     def __init__(self, iRacingConnection):
@@ -60,8 +76,24 @@ class IRacingData:
 
     def grabData(self):
         """Refreshes data from iRacing JSON API."""
-        #TODO: Implement
-        pass
+        self.latestGetDriverStatusJSON = self.iRacingConnection.fetchDriverStatusJSON()
+
+        # Populate drivers dictionary
+        # This could be made possibly more efficient by reusing existing Driver objects, but we'll be destructive and wasteful for now.
+        for racerJSON in self.latestGetDriverStatusJSON["fsRacers"]:
+            driver = Driver(racerJSON)
+            self.driversByID[driver.id] = driver
+
+    def onlineDrivers(self):
+        """Returns an array of all online Driver()s"""
+        drivers = []
+
+        for driverID, driver in self.driversByID.items():
+            if driver.isOnline:
+                drivers.append(driver)
+
+        return drivers
+
 
 class IRacingConnection(object):
 
@@ -197,19 +229,19 @@ class Racebot(callbacks.Plugin):
 
         logger.info("Command sent by " + str(msg.nick))
 
-        try:
-            info = self.iRacingConnection.fetchDriverStatusJSON(friends=True, studied=True, onlineOnly=True)
+        self.iRacingData.grabData()
+        onlineDrivers = self.iRacingData.onlineDrivers()
+        onlineDriverNames = []
 
-            if info != None:
+        for driver in onlineDrivers:
+            onlineDriverNames.append(driver.nameForPrinting())
 
-                racers = []
-                for racerJSON in info["fsRacers"]:
-                    racers.append(racerJSON["name"])
+        if len(onlineDriverNames) == 0:
+            response = 'No one is racing'
+        else:
+            response = 'Online racers: %s' % utils.str.commaAndify(onlineDriverNames)
 
-                irc.reply("We found " + utils.str.commaAndify(racers))
-
-        except utils.web.Error as e:
-            irc.reply("Unable to open iRacing URL: " + str(e))
+        irc.reply(response)
 
     racers = wrap(racers)
 
