@@ -46,6 +46,25 @@ logger = logging.getLogger('supybot')
 class NoCredentialsException(Exception):
     pass
 
+class Session(object):
+    def __init__(self, driverJson):
+        self.driverJson = driverJson
+        self.id = driverJson.get('sessionId')
+        self.startTime = driverJson.get('startTime')
+        self.trackId = driverJson.get('trackId')
+        self.sessionStatus = driverJson.get('subSessionStatus')
+        self.registeredDriverCount = driverJson.get('regCount_0')
+        self.seasonId = driverJson.get('seriesId')
+        self.eventTypeId = driverJson.get('eventTypeId')
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.id = other.id
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 class Driver(object):
 
     def __init__(self, json):
@@ -64,6 +83,20 @@ class Driver(object):
         else:
             self.isOnline = False
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.id == other.id
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def currentSession(self):
+        """Returns a newly instantiated Session() object if this racer is registered for a session"""
+        if 'sessionId' not in self.json:
+            return None
+
+        return Session(self.json)
 
     def nameForPrinting(self):
         if self.nickname is not None:
@@ -76,6 +109,7 @@ class Driver(object):
 class IRacingData:
 
     driversByID = {}
+    sessionByID = {}
     latestGetDriverStatusJSON = None
 
     def __init__(self, iRacingConnection):
@@ -85,11 +119,16 @@ class IRacingData:
         """Refreshes data from iRacing JSON API."""
         self.latestGetDriverStatusJSON = self.iRacingConnection.fetchDriverStatusJSON()
 
-        # Populate drivers dictionary
-        # This could be made possibly more efficient by reusing existing Driver objects, but we'll be destructive and wasteful for now.
+        # Populate drivers and sessions dictionaries
+        # This could be made possibly more efficient by reusing existing Driver and Session objects,
+        # but we'll be destructive and wasteful for now.
         for racerJSON in self.latestGetDriverStatusJSON["fsRacers"]:
             driver = Driver(racerJSON)
             self.driversByID[driver.id] = driver
+
+            session = driver.currentSession()
+            if session is not None:
+                self.sessionByID[session.id] = session
 
     def onlineDrivers(self):
         """Returns an array of all online Driver()s"""
