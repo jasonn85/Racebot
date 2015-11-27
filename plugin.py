@@ -41,8 +41,6 @@ import supybot.ircmsgs as ircmsgs
 
 logger = logging.getLogger('supybot')
 
-# https://members.iracing.com/membersite/Login
-
 class NoCredentialsException(Exception):
     pass
 
