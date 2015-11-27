@@ -57,6 +57,12 @@ conf.registerGlobalValue(Racebot, 'iRacingUsername',
                          registry.String('', """iRacing account (email) that will have all relevat users watched or friended."""))
 conf.registerGlobalValue(Racebot, 'iRacingPassword',
                          registry.String('', """Password for the iRacing account.  Hopefully we get OAuth some day :-/""", private=True))
+conf.registerChannelValue(Racebot, 'raceRegistrationAlerts',
+                          registry.Boolean(True, """Determines whether the bot will broadcast in this channel whenever
+                          a user joins a race"""))
+conf.registerChannelValue(Racebot, 'nonRaceRegistrationAlerts',
+                          registry.Boolean(False, """Determines whether the bot will broadcast in this channel whenever
+                          a user joins a session other than a race (practice, qual, etc.)"""))
 
 
 
