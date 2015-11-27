@@ -47,7 +47,7 @@ class NoCredentialsException(Exception):
 class Session(object):
     def __init__(self, driverJson):
         self.driverJson = driverJson
-        self.id = driverJson.get('sessionId')
+        self.id = driverJson[sessionId']
         self.startTime = driverJson.get('startTime')
         self.trackId = driverJson.get('trackId')
         self.sessionStatus = driverJson.get('subSessionStatus')
@@ -94,8 +94,11 @@ class Driver(object):
 
     def currentSession(self):
         """Returns a newly instantiated Session() object if this racer is registered for a session"""
-        if self.isInASession():
-            return Session(self.json)
+        try:
+            if self.isInASession():
+                return Session(self.json)
+        except Exception as e:
+            logger.warning('Caught exception parsing session data for %s: %s', self.nameForPrinting(), str(e))
 
         return None
 
