@@ -108,6 +108,7 @@ class Driver(object):
     lastNotifiedSession = None  # The ID of the last race session
 
 class IRacingData:
+    """Aggregates all driver and session data into dictionaries."""
 
     driversByID = {}
     sessionByID = {}
@@ -242,8 +243,8 @@ class Racebot(callbacks.Plugin):
         username = self.registryValue('iRacingUsername')
         password = self.registryValue('iRacingPassword')
 
-        self.iRacingConnection = IRacingConnection(username, password)
-        self.iRacingData = IRacingData(self.iRacingConnection)
+        connection = IRacingConnection(username, password)
+        self.iRacingData = IRacingData(connection)
 
         # Check for newly registered racers every x time, (initially five minutes.)
         # This should perhaps ramp down in frequency during non-registration times and ramp up a few minutes
