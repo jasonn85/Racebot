@@ -49,7 +49,10 @@ class NoCredentialsException(Exception):
 class Driver(object):
     pass
 
-class IracingConnection(object):
+class IRacingData:
+    pass
+
+class IRacingConnection(object):
 
     def __init__(self, username, password):
         self.session = requests.Session()
@@ -141,7 +144,7 @@ class Racebot(callbacks.Plugin):
         username = self.registryValue('iRacingUsername')
         password = self.registryValue('iRacingPassword')
 
-        self.iracingConnection = IracingConnection(username, password)
+        self.iRacingConnection = IRacingConnection(username, password)
 
         # Check for newly registered racers every x time, (initially five minutes.)
         # This should perhaps ramp down in frequency during non-registration times and ramp up a few minutes
@@ -175,7 +178,7 @@ class Racebot(callbacks.Plugin):
         logger.info("Command sent by " + str(msg.nick))
 
         try:
-            response = self.iracingConnection.requestURL("http://members.iracing.com/membersite/member/GetDriverStatus?friends=1&studied=1&onlineOnly=1")
+            response = self.iRacingConnection.requestURL("http://members.iracing.com/membersite/member/GetDriverStatus?friends=1&studied=1&onlineOnly=1")
             info = json.loads(response.text)
 
             if info != None:
