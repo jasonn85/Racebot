@@ -59,7 +59,7 @@ class Session(object):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.id = other.id
+            return self.id == other.id
         return False
 
     def __ne__(self, other):
