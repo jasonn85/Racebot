@@ -36,6 +36,8 @@ import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import logging
+import supybot.schedule as schedule
+import supybot.ircmsgs as ircmsgs
 
 logger = logging.getLogger('supybot')
 
@@ -45,7 +47,7 @@ class NoCredentialsException(Exception):
     pass
 
 class Driver(object):
-
+    pass
 
 class IracingConnection(object):
 
@@ -129,15 +131,39 @@ class Racebot(callbacks.Plugin):
     """Add the help for "@plugin help Racebot" here
     This should describe *how* to use this plugin."""
 
+    SCHEDULER_TASK_NAME = 'SchedulerTask'
+    SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
+
     def __init__(self, irc):
         self.__parent = super(Racebot, self)
         self.__parent.__init__(irc)
+        self.irc = irc
 
         username = self.registryValue('iRacingUsername')
         password = self.registryValue('iRacingPassword')
 
         self.iracingConnection = IracingConnection(username, password)
 
+        # Check for newly registered racers every x time, (initially five minutes.)
+        # This should perhaps ramp down in frequency during non-registration times and ramp up a few minutes
+        #  before race start times (four times per hour.)  For now, we fire every five minutes.
+        schedule.addPeriodicEvent(doBroadcastTick, SCHEDULER_INTERVAL_SECONDS, SCHEDULER_TASK_NAME)
+
+    def die(self):
+        schedule.removePeriodicEvent(SCHEDULER_TASK_NAME)
+        super.die()
+
+    def doBroadcastTick(self):
+
+        # TODO: Loop through all users, finding those newly registered for races and non-races
+        # For each user found, loop through all channels and broadcast as appropriate.
+        for channel in irc.state.channels:
+            isRaceSession = True # TODO: Replace this placeholder
+            relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
+            shouldBroadcast = self.registryValue(relevantConfigValue, channel)
+
+            if shouldBroadcast:
+                self.irc.queueMsg(ircmsgs.privmsg(channel, 'Something about a racer here')) # TODO: Implement message
 
     def racers(self, irc, msg, args):
         """takes no arguments
