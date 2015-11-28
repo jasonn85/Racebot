@@ -47,7 +47,7 @@ class NoCredentialsException(Exception):
 class Session(object):
     def __init__(self, driverJson):
         self.driverJson = driverJson
-        self.id = driverJson[sessionId']
+        self.id = driverJson['sessionId']
         self.startTime = driverJson.get('startTime')
         self.trackId = driverJson.get('trackId')
         self.sessionStatus = driverJson.get('subSessionStatus')
