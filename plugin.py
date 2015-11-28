@@ -38,6 +38,7 @@ import supybot.callbacks as callbacks
 import logging
 import supybot.schedule as schedule
 import supybot.ircmsgs as ircmsgs
+import sqlite3
 
 logger = logging.getLogger('supybot')
 
@@ -65,21 +66,34 @@ class Session(object):
 
 class Driver(object):
 
-    def __init__(self, json):
+    def __init__(self, json, db):
+        """
+        @type db: RacebotDB
+        """
 
         self.json = json
+        self.db = db
         self.id = json['custid']
         self.name = json['name']
         self.sessionId = json.get('sessionId')
-
-        # TODO: Find nickname
-        self.nickname = None
 
         # Hidden users do not have info such as online status
         if 'hidden' not in json:
             self.isOnline = json['lastSeen'] > 0
         else:
             self.isOnline = False
+
+
+            #     def persistDriver(self, driver, nick=None, allowNickReveal=None, allowNameReveal=None, allowRaceAlerts=None, allowOnlineQuery=None):
+
+
+        # Test code that will obviously break
+        if self.name == 'Benjamin+Fields':
+            logger.info('Persisting Bentai maybe...')
+            self.db.persistDriver(self, nick='Bentai')
+            logger.info('Bentai persisted.  I wonder if I can find a nickname.')
+            nick = self.db.nickForDriver(self)
+            logger.info('Nick found is "%s"', nick)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -88,6 +102,46 @@ class Driver(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    @property
+    def nickname(self):
+        # TODO: Implement
+        return None
+
+    @nickname.setter
+    def nickname(self, theNickname):
+        # TODO: Implement
+        pass
+
+    @property
+    def allowNickReveal(self):
+        # TODO: Implement
+        return None
+
+    @allowNickReveal.setter
+    def allowNickReveal(self, theAllowNickReveal):
+        # TODO: Implement
+        pass
+
+    @property
+    def allowRaceAlerts(self):
+        # TODO: Implement
+        return None
+
+    @allowRaceAlerts.setter
+    def allowRaceAlerts(self, theAllowRaceAlerts):
+        # TODO: Implement
+        pass
+
+    @property
+    def allowOnlineQuery(self):
+        # TODO: Implement
+        return None
+
+    @allowOnlineQuery.setter
+    def allowOnlineQuery(self, theAllowOnlineQuery):
+        # TODO: Implement
+        pass
 
     def isInASession(self):
         return 'sessionId' in self.json
@@ -108,8 +162,6 @@ class Driver(object):
 
         return self.name.replace('+', ' ')
 
-    lastNotifiedSession = None  # The ID of the last race session
-
 class IRacingData:
     """Aggregates all driver and session data into dictionaries."""
 
@@ -117,8 +169,9 @@ class IRacingData:
     sessionByID = {}
     latestGetDriverStatusJSON = None
 
-    def __init__(self, iRacingConnection):
+    def __init__(self, iRacingConnection, db):
         self.iRacingConnection = iRacingConnection
+        self.db = db
 
     def grabData(self):
         """Refreshes data from iRacing JSON API."""
@@ -128,7 +181,7 @@ class IRacingData:
         # This could be made possibly more efficient by reusing existing Driver and Session objects,
         # but we'll be destructive and wasteful for now.
         for racerJSON in self.latestGetDriverStatusJSON["fsRacers"]:
-            driver = Driver(racerJSON)
+            driver = Driver(racerJSON, self.db)
             self.driversByID[driver.id] = driver
 
             if driver.isInASession():
@@ -232,22 +285,95 @@ class IRacingConnection(object):
         return json.loads(response.text)
 
 
+class RacebotDB(object):
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def _getDB(self):
+        #db = sqlite3.connect(self.filename)
+        db = sqlite3.connect(":memory:")
+        cursor = self.db.cursor()
+
+        cursor.execute("""CREATE TABLE `drivers` (
+	                    `id`	INTEGER NOT NULL UNIQUE,
+	                    `real_name`	TEXT,
+	                    `nick`	TEXT,
+	                    `allow_nick_reveal`	INTEGER DEFAULT 1,
+	                    `allow_name_reveal`	INTEGER DEFAULT 0,
+	                    `allow_race_alerts`	INTEGER DEFAULT 1,
+	                    `allow_online_query`	INTEGER DEFAULT 1,
+	                    PRIMARY KEY(id)
+                        )
+                        """)
+
+        db.commit()
+        return db
+
+    def persistDriver(self, driver, nick=None, allowNickReveal=None, allowNameReveal=None, allowRaceAlerts=None, allowOnlineQuery=None):
+        """
+        @type driver: Driver
+        """
+        db = self._getDB()
+        cursor = db.cursor()
+
+        cursor.execute("""INSERT INTO `drivers` (`id`, `real_name`) VALUES (?, ?) ON CONFLICT REPLACE""",
+                       [driver.id, driver.name])
+
+        if nick is not None:
+            cursor.execute("""UPDATE `drivers` SET `nick` = ? WHERE id = ?""", [nick, driver.id])
+
+        if allowNickReveal is not None:
+            cursor.execute("""UPDATE `drivers` SET `allow_nick_reveal` = ? WHERE id = ?""", [allowNickReveal, driver.id])
+
+        if allowNameReveal is not None:
+            cursor.execute("""UPDATE `drivers` SET `allow_name_reveal` = ? WHERE id = ?""", [allowNameReveal, driver.id])
+
+        if allowRaceAlerts is not None:
+            cursor.execute("""UPDATE `drivers` SET `allow_race_alerts` = ? WHERE id = ?""", [allowRaceAlerts, driver.id])
+
+        if allowOnlineQuery is not None:
+            cursor.execute("""UPDATE `drivers` SET `allow_online_query` = ? WHERE id = ?""", [allowOnlineQuery, driver.id])
+
+        db.commit()
+        db.close()
+
+    def _columnForDriver(self, column, driver):
+        db = self._getDB()
+        cursor = db.cursor()
+
+        queryString = "SELECT (%s) FROM `drivers` WHERE id=?" % column
+        cursor.execute(queryString, [driver.id])
+
+        result = cursor.fetchone()
+        db.close()
+        return result
+
+    def nickForDriver(self, driver):
+        return self._columnForDriver("nick", driver)
+
+
+
+
 class Racebot(callbacks.Plugin):
     """Add the help for "@plugin help Racebot" here
     This should describe *how* to use this plugin."""
 
     SCHEDULER_TASK_NAME = 'SchedulerTask'
     SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
+    DATABASE_FILENAME = 'racebot_db.sqlite3'
 
     def __init__(self, irc):
         self.__parent = super(Racebot, self)
         self.__parent.__init__(irc)
 
+        db = RacebotDB(self.DATABASE_FILENAME)
+
         username = self.registryValue('iRacingUsername')
         password = self.registryValue('iRacingPassword')
 
         connection = IRacingConnection(username, password)
-        self.iRacingData = IRacingData(connection)
+        self.iRacingData = IRacingData(connection, db)
 
         # Check for newly registered racers every x time, (initially five minutes.)
         # This should perhaps ramp down in frequency during non-registration times and ramp up a few minutes
