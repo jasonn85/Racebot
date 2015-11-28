@@ -97,43 +97,35 @@ class Driver(object):
 
     @property
     def nickname(self):
-        # TODO: Implement
-        return None
+        return self.db.nickForDriver(self)
 
     @nickname.setter
     def nickname(self, theNickname):
-        # TODO: Implement
-        pass
+        self.db.persistDriver(self, nick=theNickname)
 
     @property
     def allowNickReveal(self):
-        # TODO: Implement
-        return None
+        return self.db.allowNickRevealForDriver(self)
 
     @allowNickReveal.setter
     def allowNickReveal(self, theAllowNickReveal):
-        # TODO: Implement
-        pass
+        self.db.persistDriver(self, allowNickReveal=theAllowNickReveal)
 
     @property
     def allowRaceAlerts(self):
-        # TODO: Implement
-        return None
+        return self.db.allowRaceAlertsForDriver(self)
 
     @allowRaceAlerts.setter
     def allowRaceAlerts(self, theAllowRaceAlerts):
-        # TODO: Implement
-        pass
+        self.db.persistDriver(self, allowRaceAlerts=theAllowRaceAlerts)
 
     @property
     def allowOnlineQuery(self):
-        # TODO: Implement
-        return None
+        return self.db.allowOnlineQueryForDriver(self)
 
     @allowOnlineQuery.setter
     def allowOnlineQuery(self, theAllowOnlineQuery):
-        # TODO: Implement
-        pass
+        self.db.persistDriver(self, allowOnlineQuery=theAllowOnlineQuery)
 
     def isInASession(self):
         return 'sessionId' in self.json
@@ -365,6 +357,18 @@ class RacebotDB(object):
 
     def nickForDriver(self, driver):
         return self._rowForDriver(driver)['nick']
+
+    def allowNickRevealForDriver(self, driver):
+        return self._rowForDriver(driver)['allow_nick_reveal']
+
+    def allowNameRevealForDriver(self, driver):
+        return self._rowForDriver(driver)['allow_name_reveal']
+
+    def allowRaceAlertsForDriver(self, driver):
+        return self._rowForDriver(driver)['allow_race_alerts']
+
+    def allowOnlineQueryForDriver(self, driver):
+        return self._rowForDriver(driver)['allow_online_query']
 
 
 
