@@ -29,6 +29,7 @@
 ###
 
 import supybot.utils as utils
+import os
 from supybot.commands import *
 import requests
 import json
@@ -83,17 +84,8 @@ class Driver(object):
         else:
             self.isOnline = False
 
-
-            #     def persistDriver(self, driver, nick=None, allowNickReveal=None, allowNameReveal=None, allowRaceAlerts=None, allowOnlineQuery=None):
-
-
-        # Test code that will obviously break
-        if self.name == 'Benjamin+Fields':
-            logger.info('Persisting Bentai maybe...')
-            self.db.persistDriver(self, nick='Bentai')
-            logger.info('Bentai persisted.  I wonder if I can find a nickname.')
-            nick = self.db.nickForDriver(self)
-            logger.info('Nick found is "%s"', nick)
+        # Persist the driver (no-op if we have already seen him)
+        db.persistDriver(self)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -290,24 +282,35 @@ class RacebotDB(object):
     def __init__(self, filename):
         self.filename = filename
 
+        if filename == ':memory:' or not os.path.exists(filename):
+            self._createDatabase()
+
+    def _createDatabase(self):
+        db = sqlite3.connect(self.filename)
+
+        try:
+            cursor = db.cursor()
+
+            cursor.execute("""CREATE TABLE `drivers` (
+                            `id`	INTEGER NOT NULL UNIQUE,
+                            `real_name`	TEXT,
+                            `nick`	TEXT,
+                            `allow_nick_reveal`	INTEGER DEFAULT 1,
+                            `allow_name_reveal`	INTEGER DEFAULT 0,
+                            `allow_race_alerts`	INTEGER DEFAULT 1,
+                            `allow_online_query`	INTEGER DEFAULT 1,
+                            PRIMARY KEY(id)
+                            )
+                            """)
+
+            db.commit()
+            logger.info("Created database and drivers table")
+        finally:
+            db.close()
+
+
     def _getDB(self):
-        #db = sqlite3.connect(self.filename)
-        db = sqlite3.connect(":memory:")
-        cursor = self.db.cursor()
-
-        cursor.execute("""CREATE TABLE `drivers` (
-	                    `id`	INTEGER NOT NULL UNIQUE,
-	                    `real_name`	TEXT,
-	                    `nick`	TEXT,
-	                    `allow_nick_reveal`	INTEGER DEFAULT 1,
-	                    `allow_name_reveal`	INTEGER DEFAULT 0,
-	                    `allow_race_alerts`	INTEGER DEFAULT 1,
-	                    `allow_online_query`	INTEGER DEFAULT 1,
-	                    PRIMARY KEY(id)
-                        )
-                        """)
-
-        db.commit()
+        db = sqlite3.connect(self.filename)
         return db
 
     def persistDriver(self, driver, nick=None, allowNickReveal=None, allowNameReveal=None, allowRaceAlerts=None, allowOnlineQuery=None):
@@ -315,42 +318,53 @@ class RacebotDB(object):
         @type driver: Driver
         """
         db = self._getDB()
-        cursor = db.cursor()
 
-        cursor.execute("""INSERT INTO `drivers` (`id`, `real_name`) VALUES (?, ?) ON CONFLICT REPLACE""",
-                       [driver.id, driver.name])
+        try:
+            cursor = db.cursor()
 
-        if nick is not None:
-            cursor.execute("""UPDATE `drivers` SET `nick` = ? WHERE id = ?""", [nick, driver.id])
+            cursor.execute("""INSERT OR IGNORE INTO drivers (id, real_name) VALUES (?, ?)""",
+                          (driver.id, driver.name))
 
-        if allowNickReveal is not None:
-            cursor.execute("""UPDATE `drivers` SET `allow_nick_reveal` = ? WHERE id = ?""", [allowNickReveal, driver.id])
+            if nick is not None:
+                cursor.execute("""UPDATE drivers SET nick = ? WHERE id = ?""", (nick, driver.id))
 
-        if allowNameReveal is not None:
-            cursor.execute("""UPDATE `drivers` SET `allow_name_reveal` = ? WHERE id = ?""", [allowNameReveal, driver.id])
+            if allowNickReveal is not None:
+                cursor.execute("""UPDATE drivers SET allow_nick_reveal = ? WHERE id = ?""", (allowNickReveal, driver.id))
 
-        if allowRaceAlerts is not None:
-            cursor.execute("""UPDATE `drivers` SET `allow_race_alerts` = ? WHERE id = ?""", [allowRaceAlerts, driver.id])
+            if allowNameReveal is not None:
+                cursor.execute("""UPDATE drivers SET allow_name_reveal = ? WHERE id = ?""", (allowNameReveal, driver.id))
 
-        if allowOnlineQuery is not None:
-            cursor.execute("""UPDATE `drivers` SET `allow_online_query` = ? WHERE id = ?""", [allowOnlineQuery, driver.id])
+            if allowRaceAlerts is not None:
+                cursor.execute("""UPDATE drivers SET allow_race_alerts = ? WHERE id = ?""", (allowRaceAlerts, driver.id))
 
-        db.commit()
-        db.close()
+            if allowOnlineQuery is not None:
+                cursor.execute("""UPDATE drivers SET allow_online_query = ? WHERE id = ?""", (allowOnlineQuery, driver.id))
 
-    def _columnForDriver(self, column, driver):
+            db.commit()
+
+        finally:
+            db.close()
+
+    def _rowForDriver(self, driver):
+        """
+        @param driver: Driver
+        """
+
         db = self._getDB()
-        cursor = db.cursor()
 
-        queryString = "SELECT (%s) FROM `drivers` WHERE id=?" % column
-        cursor.execute(queryString, [driver.id])
+        try:
+            cursor = db.cursor()
+            cursor.row_factory = sqlite3.Row
+            result = cursor.execute('SELECT * FROM drivers WHERE id=?', (driver.id,))
+            row = result.fetchone()
 
-        result = cursor.fetchone()
-        db.close()
-        return result
+        finally:
+            db.close()
+
+        return row
 
     def nickForDriver(self, driver):
-        return self._columnForDriver("nick", driver)
+        return self._rowForDriver(driver)['nick']
 
 
 
@@ -362,6 +376,7 @@ class Racebot(callbacks.Plugin):
     SCHEDULER_TASK_NAME = 'SchedulerTask'
     SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
     DATABASE_FILENAME = 'racebot_db.sqlite3'
+    #DATABASE_FILENAME = ':memory:'
 
     def __init__(self, irc):
         self.__parent = super(Racebot, self)
