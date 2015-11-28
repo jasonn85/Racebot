@@ -380,7 +380,6 @@ class Racebot(callbacks.Plugin):
     SCHEDULER_TASK_NAME = 'SchedulerTask'
     SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
     DATABASE_FILENAME = 'racebot_db.sqlite3'
-    #DATABASE_FILENAME = ':memory:'
 
     def __init__(self, irc):
         self.__parent = super(Racebot, self)
