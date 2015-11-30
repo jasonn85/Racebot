@@ -47,6 +47,7 @@ class NoCredentialsException(Exception):
     pass
 
 class Session(object):
+
     def __init__(self, driverJson):
         self.driverJson = driverJson
         self.id = driverJson['sessionId']
@@ -64,6 +65,26 @@ class Session(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def isRace(self):
+        # Session types are test 1, practice 2, qualify 3, time trial 4, race 5.
+        # If only Python 2 had enums
+        return self.eventTypeId == 5
+
+    def sessionDescription(self):
+        if self.eventTypeId == 1:
+            return "Test Session"
+        elif self.eventTypeId == 2:
+            return "Practice Session"
+        elif self.eventTypeId == 3:
+            return "Qualifying Session"
+        elif self.eventTypeId == 4:
+            return "Time Trial"
+        elif self.eventTypeId == 5:
+            return "Race"
+
+        return "Unknown Session Type"
+
 
 class Driver(object):
 
@@ -131,7 +152,11 @@ class Driver(object):
         return 'sessionId' in self.json
 
     def currentSession(self):
-        """Returns a newly instantiated Session() object if this racer is registered for a session"""
+        """
+        @rtype: Session
+
+        Returns a newly instantiated Session() object if this racer is registered for a session
+        """
         try:
             if self.isInASession():
                 return Session(self.json)
@@ -141,8 +166,10 @@ class Driver(object):
         return None
 
     def nameForPrinting(self):
-        if self.nickname is not None:
-            return self.nickname
+        nick = self.nickname
+
+        if nick is not None:
+            return nick
 
         return self.name.replace('+', ' ')
 
@@ -409,15 +436,30 @@ class Racebot(callbacks.Plugin):
         # Refresh data
         self.iRacingData.grabData()
 
-        # TODO: Loop through all users, finding those newly registered for races and non-races
-        # For each user found, loop through all channels and broadcast as appropriate.
-        for channel in irc.state.channels:
-            isRaceSession = False # TODO: Replace this placeholder
-            relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
-            shouldBroadcast = self.registryValue(relevantConfigValue, channel)
+        # Loop through all drivers, looking for those in sessions
+        for (_, aDriver) in self.iRacingData.driversByID.items():
+            driver = aDriver    # After 15 minutes of struggling to get pycharm to recognize driver as a Driver object,
+                                #  this stupid reassignment to a redundant var made it happy.  <3 Python
+            """:type : Driver"""
+            session = driver.currentSession()
+            """:type : Session"""
 
-            if shouldBroadcast:
-                irc.queueMsg(ircmsgs.privmsg(channel, 'Something about a racer here')) # TODO: Implement message
+            if session is None:
+                continue
+
+            if not driver.allowOnlineQuery or not driver.allowRaceAlerts:
+                # This guy does not want to be spied
+                continue
+
+            isRaceSession = session.isRace()
+
+            for channel in irc.state.channels:
+                relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
+                shouldBroadcast = self.registryValue(relevantConfigValue, channel)
+
+                if shouldBroadcast:
+                    message = '%s is registered for a %s' % (driver.nameForPrinting(), session.sessionDescription().lower())
+                    irc.queueMsg(ircmsgs.privmsg(channel, message))
 
     def racers(self, irc, msg, args):
         """takes no arguments
