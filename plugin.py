@@ -184,6 +184,8 @@ class IRacingData:
         self.iRacingConnection = iRacingConnection
         self.db = db
 
+        # TODO: Grab all relevant car/track/season data from the iRacing JSON
+
     def grabData(self):
         """Refreshes data from iRacing JSON API."""
         self.latestGetDriverStatusJSON = self.iRacingConnection.fetchDriverStatusJSON()
