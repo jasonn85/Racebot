@@ -404,7 +404,7 @@ class Racebot(callbacks.Plugin):
     """Add the help for "@plugin help Racebot" here
     This should describe *how* to use this plugin."""
 
-    SCHEDULER_TASK_NAME = 'SchedulerTask'
+    SCHEDULER_TASK_NAME = 'RacebotBroadcastSchedulerTask'
     SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
     DATABASE_FILENAME = 'racebot_db.sqlite3'
 
