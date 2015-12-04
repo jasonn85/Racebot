@@ -150,6 +150,7 @@ class Session(object):
             return self._oldestDataThisSession
         return self
 
+    @property
     def sessionDescription(self):
         isRace = False
 
@@ -550,7 +551,7 @@ class Racebot(callbacks.Plugin):
                 shouldBroadcast = self.registryValue(relevantConfigValue, channel)
 
                 if shouldBroadcast:
-                    message = '%s is registered for a %s' % (driver.nameForPrinting(), session.sessionDescription().lower())
+                    message = '%s is registered for a %s' % (driver.nameForPrinting(), session.sessionDescription.lower())
                     irc.queueMsg(ircmsgs.privmsg(channel, message))
 
     def racers(self, irc, msg, args):
