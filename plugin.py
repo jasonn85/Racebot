@@ -52,6 +52,8 @@ class Session(object):
     # If we see someone registered for a practice without joining for this long, we can assume the server is holding
     #  this practice slot for a pre-race practice.  If it is not a pre-race practice, he will have been removed from
     #  the session if he has not joined in this much time.
+
+    # TODO: Establish a meaningful value for this through testing
     MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS = 120
 
     def __init__(self, driverJson, previousSession=None):
