@@ -95,10 +95,12 @@ class Session(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @property
     def isPractice(self):
         """ Note: This is true also if this is a pre-race practice, automatic registration """
         return self.eventTypeId == 2
 
+    @property
     def isRace(self):
         """ Returns True only if this is a pure race session; returns false if this is a pre-race practice """
         # Session types are test 1, practice 2, qualify 3, time trial 4, race 5.
@@ -116,7 +118,7 @@ class Session(object):
          It requires a minimum amount of time to have passed between data """
 
         # Firstly, this must be a practice to be a pre-race practice
-        if not self.isPractice():
+        if not self.isPractice:
             return False
 
         # If no previous session is available, we cannot say that this is a pre-race session yet.
@@ -540,7 +542,7 @@ class Racebot(callbacks.Plugin):
                 # This guy does not want to be spied
                 continue
 
-            isRaceSession = session.isRace()
+            isRaceSession = session.isRace
 
             for channel in irc.state.channels:
                 relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
