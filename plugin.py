@@ -107,6 +107,7 @@ class Session(object):
         # If only Python 2 had enums
         return self.eventTypeId == 5
 
+    @property
     def userRegisteredButHasNotJoined(self):
         return self.regStatus == 'reg_ok_to_join'
 
@@ -128,7 +129,7 @@ class Session(object):
         # Ensure that the user had not joined the previous session.  If the user has joined the previous session,
         #  it does not necessarily mean that this is not a pre-race practice; it means that we cannot divine that it is
         #  so with this data, even if it is true :(
-        if not self.oldestDataThisSession.userRegisteredButHasNotJoined():
+        if not self.oldestDataThisSession.userRegisteredButHasNotJoined:
             return False
 
         # Calculate the time between data points.  If it's been too soon, we cannot differentiate between a pre-race
@@ -138,7 +139,7 @@ class Session(object):
             return False
 
         # Enough time has passed.  If this user has stayed registered but not joined, we may have a pre-race prac!
-        if self.userRegisteredButHasNotJoined():
+        if self.userRegisteredButHasNotJoined:
             return True
 
         return False
