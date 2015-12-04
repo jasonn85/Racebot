@@ -108,6 +108,10 @@ class Session(object):
         return self.eventTypeId == 5
 
     @property
+    def isRaceOrPreRacePractice(self):
+        return self.isRace or self.isPotentiallyPreRaceSession
+
+    @property
     def userRegisteredButHasNotJoined(self):
         return self.regStatus == 'reg_ok_to_join'
 
@@ -476,19 +480,24 @@ class RacebotDB(object):
         return row
 
     def nickForDriver(self, driver):
-        return self._rowForDriver(driver)['nick']
+        row = self._rowForDriver(driver)
+        return None if row is None else row['nick']
 
     def allowNickRevealForDriver(self, driver):
-        return self._rowForDriver(driver)['allow_nick_reveal']
+        row = self._rowForDriver(driver)
+        return None if row is None else row['allow_nick_reveal']
 
     def allowNameRevealForDriver(self, driver):
-        return self._rowForDriver(driver)['allow_name_reveal']
+        row = self._rowForDriver(driver)
+        return None if row is None else row['allow_name_reveal']
 
     def allowRaceAlertsForDriver(self, driver):
-        return self._rowForDriver(driver)['allow_race_alerts']
+        row = self._rowForDriver(driver)
+        return None if row is None else row['allow_race_alerts']
 
     def allowOnlineQueryForDriver(self, driver):
-        return self._rowForDriver(driver)['allow_online_query']
+        row = self._rowForDriver(driver)
+        return None if row is None else row['allow_online_query']
 
 
 
@@ -544,7 +553,7 @@ class Racebot(callbacks.Plugin):
                 # This guy does not want to be spied
                 continue
 
-            isRaceSession = session.isRace
+            isRaceSession = session.isRaceOrPreRacePractice
 
             for channel in irc.state.channels:
                 relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
