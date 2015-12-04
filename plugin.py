@@ -130,7 +130,7 @@ class Session(object):
         # Calculate the time between data points.  If it's been too soon, we cannot differentiate between a pre-race
         #  practice where the spot will be held forever vs. a normal practice
         timeDelta = self.updateTime - self.oldestDataThisSession.updateTime
-        if timeDelta > MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS:
+        if timeDelta < MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS:
             return False
 
         # Enough time has passed.  If this user has stayed registered but not joined, we may have a pre-race prac!
