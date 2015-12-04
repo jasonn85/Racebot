@@ -214,10 +214,7 @@ class Driver(object):
         for a race.)"""
 
         # Compare old session to new
-        oldSession = self.currentSession
         self._updateCurrentSessionWithJson(json)
-
-
 
         # Replace old data with new
         self.json = json
