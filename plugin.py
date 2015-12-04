@@ -246,7 +246,8 @@ class Driver(object):
 
     @property
     def allowRaceAlerts(self):
-        return self.db.allowRaceAlertsForDriver(self)
+        # Do not allow race alerts if we do not have a nickname for this driver.
+        return False if self.nickname is None else self.db.allowRaceAlertsForDriver(self)
 
     @allowRaceAlerts.setter
     def allowRaceAlerts(self, theAllowRaceAlerts):
@@ -254,7 +255,8 @@ class Driver(object):
 
     @property
     def allowOnlineQuery(self):
-        return self.db.allowOnlineQueryForDriver(self)
+        # Do not allow online query if we do not have a nickname for this driver.
+        return False if self.nickname is None else self.db.allowOnlineQueryForDriver(self)
 
     @allowOnlineQuery.setter
     def allowOnlineQuery(self, theAllowOnlineQuery):
