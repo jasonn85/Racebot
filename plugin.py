@@ -123,7 +123,7 @@ class Session(object):
             return False
 
         # If no previous session is available, we cannot say that this is a pre-race session yet.
-        if self.oldestDataThisSession == None:
+        if self._oldestDataThisSession == None:
             return False
 
         # Ensure that the user had not joined the previous session.  If the user has joined the previous session,
