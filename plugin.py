@@ -481,7 +481,7 @@ class RacebotDB(object):
 
     def nickForDriver(self, driver):
         row = self._rowForDriver(driver)
-        return None if row is None else row['nick']
+        return None if (row is None or 'nick' is not in row) else row['nick']
 
     def allowNickRevealForDriver(self, driver):
         row = self._rowForDriver(driver)
