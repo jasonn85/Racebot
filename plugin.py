@@ -174,7 +174,6 @@ class Driver(object):
         @type db: RacebotDB
         """
 
-        self.json = json
         self.db = db
         self.id = json['custid']
         self.name = json['name']
@@ -200,6 +199,8 @@ class Driver(object):
         return not self.__eq__(other)
 
     def _updateCurrentSessionWithJson(self, json):
+        self.json = json
+
         if self._isInASessionWithJson(json):
             if self.currentSession is not None:
                 self.currentSession = Session(json, previousSession=self.currentSession)
@@ -213,11 +214,7 @@ class Driver(object):
         (The initial version uses the previous data vs. the current data to discover if the driver is registered
         for a race.)"""
 
-        # Compare old session to new
         self._updateCurrentSessionWithJson(json)
-
-        # Replace old data with new
-        self.json = json
 
     @property
     def nickname(self):
