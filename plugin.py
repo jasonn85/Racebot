@@ -39,6 +39,7 @@ import supybot.callbacks as callbacks
 import logging
 import supybot.schedule as schedule
 import supybot.ircmsgs as ircmsgs
+import datetime
 import sqlite3
 
 logger = logging.getLogger('supybot')
@@ -48,19 +49,44 @@ class NoCredentialsException(Exception):
 
 class Session(object):
 
-    def __init__(self, driverJson):
+    # If we see someone registered for a practice without joining for this long, we can assume the server is holding
+    #  this practice slot for a pre-race practice.  If it is not a pre-race practice, he will have been removed from
+    #  the session if he has not joined in this much time.
+    MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS = 120
+
+    def __init__(self, driverJson, previousSession=None):
+        """
+        @type previousSession: Session
+        """
         self.driverJson = driverJson
-        self.id = driverJson['sessionId']
+        self.sessionId = driverJson['sessionId']
+        self.subSessionId = driverJson.get('subSessionId')
         self.startTime = driverJson.get('startTime')
         self.trackId = driverJson.get('trackId')
+        self.regStatus = driverJson.get('regStatus')
         self.sessionStatus = driverJson.get('subSessionStatus')
         self.registeredDriverCount = driverJson.get('regCount_0')
         self.seasonId = driverJson.get('seriesId')
         self.eventTypeId = driverJson.get('eventTypeId')
+        self.updateTime = datetime.datetime.now().time()
+
+        # Maintain the oldest record we have of this user in this session
+        if previousSession is not None and previousSession.subSessionId == self.subSessionId:
+            if previousSession.oldestDataThisSession is not None:
+                self.oldestDataThisSession = previousSession.oldestDataThisSession
+            else:
+                self.oldestDataThisSession = previousSession
+        else:
+            self.previousSession = None
+
+        if previousSession.isPotentiallyPreRaceSession:
+            self.isPotentiallyPreRaceSession = True
+        else:
+            self.isPotentiallyPreRaceSession = self._isPotentiallyPreRaceSession()
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.id == other.id
+        if isinstance(other, self.__class__) and self.subSessionId is not None and other.subSessionId is not None:
+            return self.subSessionId == other.subSessionId
         return False
 
     def __ne__(self, other):
@@ -71,19 +97,53 @@ class Session(object):
         # If only Python 2 had enums
         return self.eventTypeId == 5
 
+    def userRegisteredButHasNotJoined(self):
+        return self.regStatus == 'reg_ok_to_join'
+
+    def _isPotentiallyPreRaceSession(self):
+        """
+        @type previous: Session
+
+        True if this session is a practice where the user is registered but has still not joined since our last tick
+         It requires a minimum amount of time to have passed between data """
+
+        # If no previous session is available, we cannot say that this is a pre-race session yet.
+        if self.oldestDataThisSession == None:
+            return False
+
+        # Ensure that the user had not joined the previous session.  If the user has joined the previous session,
+        #  it does not necessarily mean that this is not a pre-race practice; it means that we cannot divine that it is
+        #  so with this data, even if it is true :(
+        if not self.oldestDataThisSession.userRegisteredButHasNotJoined():
+            return False
+
+        # Calculate the time between data points.  If it's been too soon, we cannot differentiate between a pre-race
+        #  practice where the spot will be held forever vs. a normal practice
+        timeDelta = self.updateTime - self.oldestDataThisSession.updateTime
+        if timeDelta < MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS:
+            return False
+
+        # Enough time has passed.  If this user has stayed registered but not joined, we may have a pre-race prac!
+        if self.userRegisteredButHasNotJoined():
+            return True
+
+        return False
+
     def sessionDescription(self):
         if self.eventTypeId == 1:
-            return "Test Session"
+            return 'Test Session'
         elif self.eventTypeId == 2:
-            return "Practice Session"
+            if self.isPotentiallyPreRaceSession:
+                return 'Race'
+            return 'Practice Session'
         elif self.eventTypeId == 3:
-            return "Qualifying Session"
+            return 'Qualifying Session'
         elif self.eventTypeId == 4:
-            return "Time Trial"
+            return 'Time Trial'
         elif self.eventTypeId == 5:
-            return "Race"
+            return 'Race'
 
-        return "Unknown Session Type"
+        return 'Unknown Session Type'
 
 
 class Driver(object):
@@ -98,6 +158,8 @@ class Driver(object):
         self.id = json['custid']
         self.name = json['name']
         self.sessionId = json.get('sessionId')
+
+        self._updateCurrentSessionWithJson(json)
 
         # Hidden users do not have info such as online status
         if 'hidden' not in json:
@@ -115,6 +177,29 @@ class Driver(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def _updateCurrentSessionWithJson(self, json):
+        if self._isInASessionWithJson(json):
+            if self.currentSession is not None:
+                self.currentSession = Session(json, previousSession=self.currentSession)
+            else:
+                self.currentSession = Session(json)
+        else:
+            self.currentSession = None
+
+    def updateWithJSON(self, json):
+        """New JSON for this driver has been acquired.  Merge this data.
+        (The initial version uses the previous data vs. the current data to discover if the driver is registered
+        for a race.)"""
+
+        # Compare old session to new
+        oldSession = self.currentSession
+        self._updateCurrentSessionWithJson(json)
+
+
+
+        # Replace old data with new
+        self.json = json
 
     @property
     def nickname(self):
@@ -149,21 +234,10 @@ class Driver(object):
         self.db.persistDriver(self, allowOnlineQuery=theAllowOnlineQuery)
 
     def isInASession(self):
-        return 'sessionId' in self.json
+        return self._isInASessionWithJson(self.json)
 
-    def currentSession(self):
-        """
-        @rtype: Session
-
-        Returns a newly instantiated Session() object if this racer is registered for a session
-        """
-        try:
-            if self.isInASession():
-                return Session(self.json)
-        except Exception as e:
-            logger.warning('Caught exception parsing session data for %s: %s', self.nameForPrinting(), str(e))
-
-        return None
+    def _isInASessionWithJson(self, json):
+        return 'sessionId' in json
 
     def nameForPrinting(self):
         nick = self.nickname
@@ -184,11 +258,11 @@ class IRacingData:
         self.iRacingConnection = iRacingConnection
         self.db = db
 
-        # TODO: Grab all relevant car/track/season data from the iRacing JSON
+        self.grabData(onlineOnly=False)
 
-    def grabData(self):
+    def grabData(self, onlineOnly=True):
         """Refreshes data from iRacing JSON API."""
-        self.latestGetDriverStatusJSON = self.iRacingConnection.fetchDriverStatusJSON()
+        self.latestGetDriverStatusJSON = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
 
         # Populate drivers and sessions dictionaries
         # This could be made possibly more efficient by reusing existing Driver and Session objects,
