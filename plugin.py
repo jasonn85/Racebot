@@ -113,6 +113,10 @@ class Session(object):
         True if this session is a practice where the user is registered but has still not joined since our last tick
          It requires a minimum amount of time to have passed between data """
 
+        # Firstly, this must be a practice to be a pre-race practice
+        if not self.isPractice():
+            return False
+
         # If no previous session is available, we cannot say that this is a pre-race session yet.
         if self.oldestDataThisSession == None:
             return False
@@ -126,7 +130,7 @@ class Session(object):
         # Calculate the time between data points.  If it's been too soon, we cannot differentiate between a pre-race
         #  practice where the spot will be held forever vs. a normal practice
         timeDelta = self.updateTime - self.oldestDataThisSession.updateTime
-        if timeDelta < MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS:
+        if timeDelta > MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS:
             return False
 
         # Enough time has passed.  If this user has stayed registered but not joined, we may have a pre-race prac!
