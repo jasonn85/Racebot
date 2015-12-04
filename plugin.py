@@ -151,17 +151,23 @@ class Session(object):
         return self
 
     def sessionDescription(self):
+        isRace = False
+
         if self.eventTypeId == 1:
             return 'Test Session'
         elif self.eventTypeId == 2:
             if self.isPotentiallyPreRaceSession:
-                return 'Race'
-            return 'Practice Session'
+                isRace = True
+            else:
+                return 'Practice Session'
         elif self.eventTypeId == 3:
             return 'Qualifying Session'
         elif self.eventTypeId == 4:
             return 'Time Trial'
         elif self.eventTypeId == 5:
+            isRace = True
+
+        if isRace:
             return 'Race'
 
         return 'Unknown Session Type'
