@@ -298,12 +298,11 @@ class IRacingData:
             driver = Driver(racerJSON, self.db)
             self.driversByID[driver.id] = driver
 
-
     def onlineDrivers(self):
         """Returns an array of all online Driver()s"""
         drivers = []
 
-        for driverID, driver in self.driversByID.items():
+        for _, driver in self.driversByID.items():
             if driver.isOnline:
                 drivers.append(driver)
 
