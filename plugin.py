@@ -72,17 +72,18 @@ class Session(object):
 
         # Maintain the oldest record we have of this user in this session
         if previousSession is not None and previousSession.subSessionId == self.subSessionId:
-            if previousSession.oldestDataThisSession is not None:
-                self.oldestDataThisSession = previousSession.oldestDataThisSession
-            else:
-                self.oldestDataThisSession = previousSession
-        else:
-            self.previousSession = None
+            self._oldestDataThisSession = previousSession.oldestDataThisSession
 
-        if previousSession.isPotentiallyPreRaceSession:
-            self.isPotentiallyPreRaceSession = True
+            if previousSession.isPotentiallyPreRaceSession:
+                # If we have already established that this is a pre-race session, we do not need to perform any further logic
+                self.isPotentiallyPreRaceSession = True
+            else:
+                # We do not yet know that this is a pre-race practice.  Check again.
+                self.isPotentiallyPreRaceSession = self._isPotentiallyPreRaceSession()
         else:
-            self.isPotentiallyPreRaceSession = self._isPotentiallyPreRaceSession()
+            # This is our first data point for this session.  We have no idea if this is pre-race or not
+            self._oldestDataThisSession = None
+            self.isPotentiallyPreRaceSession = False
 
     def __eq__(self, other):
         if isinstance(other, self.__class__) and self.subSessionId is not None and other.subSessionId is not None:
@@ -92,7 +93,12 @@ class Session(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def isPractice(self):
+        """ Note: This is true also if this is a pre-race practice, automatic registration """
+        return self.eventTypeId == 2
+
     def isRace(self):
+        """ Returns True only if this is a pure race session; returns false if this is a pre-race practice """
         # Session types are test 1, practice 2, qualify 3, time trial 4, race 5.
         # If only Python 2 had enums
         return self.eventTypeId == 5
@@ -128,6 +134,12 @@ class Session(object):
             return True
 
         return False
+
+    @property
+    def oldestDataThisSession(self):
+        if self._oldestDataThisSession is not None:
+            return self._oldestDataThisSession
+        return self
 
     def sessionDescription(self):
         if self.eventTypeId == 1:
