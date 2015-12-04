@@ -280,7 +280,6 @@ class IRacingData:
     """Aggregates all driver and session data into dictionaries."""
 
     driversByID = {}
-    latestGetDriverStatusJSON = None
 
     def __init__(self, iRacingConnection, db):
         self.iRacingConnection = iRacingConnection
@@ -290,12 +289,12 @@ class IRacingData:
 
     def grabData(self, onlineOnly=True):
         """Refreshes data from iRacing JSON API."""
-        self.latestGetDriverStatusJSON = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
+        json = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
 
         # Populate drivers and sessions dictionaries
         # This could be made possibly more efficient by reusing existing Driver and Session objects,
         # but we'll be destructive and wasteful for now.
-        for racerJSON in self.latestGetDriverStatusJSON["fsRacers"]:
+        for racerJSON in json["fsRacers"]:
             driver = Driver(racerJSON, self.db)
             self.driversByID[driver.id] = driver
 
