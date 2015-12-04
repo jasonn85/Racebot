@@ -187,11 +187,11 @@ class Driver(object):
         """
 
         self.db = db
-        self.id = json['custid']
+        self.id = self.driverIDWithJson(json)
         self.name = json['name']
         self.sessionId = json.get('sessionId')
 
-        self._updateCurrentSessionWithJson(json)
+        self.updateWithJSON(json)
 
         # Hidden users do not have info such as online status
         if 'hidden' not in json:
@@ -202,6 +202,10 @@ class Driver(object):
         # Persist the driver (no-op if we have already seen him)
         db.persistDriver(self)
 
+    @staticmethod
+    def driverIDWithJson(json):
+        return json['custid']
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.id == other.id
@@ -210,7 +214,11 @@ class Driver(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def _updateCurrentSessionWithJson(self, json):
+    def updateWithJSON(self, json):
+        """New JSON for this driver has been acquired.  Merge this data.
+        (The initial version uses the previous data vs. the current data to discover if the driver is registered
+        for a race.)"""
+
         self.json = json
 
         if self._isInASessionWithJson(json):
@@ -220,13 +228,6 @@ class Driver(object):
                 self.currentSession = Session(json)
         else:
             self.currentSession = None
-
-    def updateWithJSON(self, json):
-        """New JSON for this driver has been acquired.  Merge this data.
-        (The initial version uses the previous data vs. the current data to discover if the driver is registered
-        for a race.)"""
-
-        self._updateCurrentSessionWithJson(json)
 
     @property
     def nickname(self):
@@ -292,11 +293,18 @@ class IRacingData:
         json = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
 
         # Populate drivers and sessions dictionaries
-        # This could be made possibly more efficient by reusing existing Driver and Session objects,
-        # but we'll be destructive and wasteful for now.
         for racerJSON in json["fsRacers"]:
-            driver = Driver(racerJSON, self.db)
-            self.driversByID[driver.id] = driver
+            driverID = Driver.driverIDWithJson(racerJSON)
+
+            # Check if we already have data for this driver to update
+            if driverID in self.driversByID:
+                driver = self.driversByID[driverID]
+                """@type driver: Driver"""
+                driver.updateWithJSON(racerJSON)
+            else:
+                # This is the first time we've seen this driver
+                driver = Driver(racerJSON, self.db)
+                self.driversByID[driver.id] = driver
 
     def onlineDrivers(self):
         """Returns an array of all online Driver()s"""
