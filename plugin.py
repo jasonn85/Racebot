@@ -33,6 +33,7 @@ import os
 from supybot.commands import *
 import requests
 import sys
+import re
 import json
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
@@ -299,10 +300,24 @@ class IRacingData:
         """Refreshes season/car/track data from the iRacing main page Javascript"""
         rawMainPageHTML = self.iRacingConnection.fetchMainPageRawHTML()
         self.lastSeasonDataFetchTime = datetime.datetime.utcnow()
-        logger.info('Grabbed %i characters from the iRacing main page', len(rawMainPageHTML))
+
+        try:
+            trackJSON = re.search("var TrackListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+            carJSON = re.search("var CarListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+            carClassJSON = re.search("var CarClassListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+            seasonJSON = re.search("var SeasonListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+
+            tracks = json.loads(trackJSON)
+            cars = json.loads(carJSON)
+            carClasses = json.loads(carClassJSON)
+            seasons = json.loads(seasonJSON)
+
+            logger.info('Loaded data for %i tracks, %i cars, %i car classes, and %i seasons.', len(tracks), len(cars), len(carClasses), len(seasons))
+
+        except AttributeError:
+            logger.info('Unable to match track/car/season (one or more) listing regex in iRacing main page data.  It is possible that iRacing changed the JavaScript structure of their main page!  Oh no!')
 
 
-        
 
 
     def grabData(self, onlineOnly=True):
@@ -423,6 +438,12 @@ class IRacingConnection(object):
         return None
 
     def fetchMainPageRawHTML(self):
+        """Fetches raw HTML that can be used to scrape various Javascript vars that list tracks/cars/series/etc
+
+        Note: It is arguable that the IRacingConnection should do this parsing itself as it does in fetchDriverStatusJSON.
+        The problem is that this one large network operation returns several distinct pieces of data that the IRacingData will care about.
+        Rather than return a messy dictionary or tuple, I'm just spewing the raw HTML and letting the caller do the parsing.
+        """
         url = self.URL_MAIN_PAGE
         response = self.requestURL(url)
         return response.text
