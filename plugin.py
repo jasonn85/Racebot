@@ -32,6 +32,7 @@ import supybot.utils as utils
 import os
 from supybot.commands import *
 import requests
+import sys
 import json
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
@@ -281,15 +282,39 @@ class IRacingData:
     """Aggregates all driver and session data into dictionaries."""
 
     driversByID = {}
+    SECONDS_BETWEEN_CACHING_SEASON_DATA = 43200     # 12 hours
 
     def __init__(self, iRacingConnection, db):
+        """
+        @type iRacingConnection : IRacingConnection
+        @type db : RacebotDB
+        """
         self.iRacingConnection = iRacingConnection
         self.db = db
+        self.lastSeasonDataFetchTime = None
 
         self.grabData(onlineOnly=False)
 
+    def grabSeasonData(self):
+        """Refreshes season/car/track data from the iRacing main page Javascript"""
+        rawMainPageHTML = self.iRacingConnection.fetchMainPageRawHTML()
+        self.lastSeasonDataFetchTime = datetime.datetime.utcnow()
+        logger.info('Grabbed %i characters from the iRacing main page', len(rawMainPageHTML))
+
+
+        
+
+
     def grabData(self, onlineOnly=True):
         """Refreshes data from iRacing JSON API."""
+
+        # Have we loaded the car/track/season data today?
+        timeSinceSeasonDataFetch = sys.maxint if self.lastSeasonDataFetchTime is None else datetime.datetime.utcnow() - self.lastSeasonDataFetchTime
+        if timeSinceSeasonDataFetch >= self.SECONDS_BETWEEN_CACHING_SEASON_DATA:
+            logTime = 'forever' if self.lastSeasonDataFetchTime is None else '%s seconds' % timeSinceSeasonDataFetch
+            logger.info('Fetching iRacing main page season data since it has been %s since we\'ve done so.', logTime)
+            self.grabSeasonData()
+
         json = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
 
         # Populate drivers and sessions dictionaries
@@ -320,6 +345,7 @@ class IRacingData:
 class IRacingConnection(object):
 
     URL_GET_DRIVER_STATUS = 'http://members.iracing.com/membersite/member/GetDriverStatus'
+    URL_MAIN_PAGE = 'http://members.iracing.com/membersite/member/Home.do'
 
     def __init__(self, username, password):
         self.session = requests.Session()
@@ -395,6 +421,11 @@ class IRacingConnection(object):
             return response
 
         return None
+
+    def fetchMainPageRawHTML(self):
+        url = self.URL_MAIN_PAGE
+        response = self.requestURL(url)
+        return response.text
 
     def fetchDriverStatusJSON(self, friends=True, studied=True, onlineOnly=False):
         url = '%s?friends=%d&studied=%d&onlineOnly=%d' % (self.URL_GET_DRIVER_STATUS, friends, studied, onlineOnly)
