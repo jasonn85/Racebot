@@ -283,6 +283,11 @@ class IRacingData:
     """Aggregates all driver and session data into dictionaries."""
 
     driversByID = {}
+    tracksByID = {}
+    carsByID = {}
+    carClassesByID = {}
+    seasonsByID = {}
+
     SECONDS_BETWEEN_CACHING_SEASON_DATA = 43200     # 12 hours
 
     def __init__(self, iRacingConnection, db):
@@ -312,11 +317,19 @@ class IRacingData:
             carClasses = json.loads(carClassJSON)
             seasons = json.loads(seasonJSON)
 
-            logger.info('Loaded data for %i tracks, %i cars, %i car classes, and %i seasons.', len(tracks), len(cars), len(carClasses), len(seasons))
+            for track in tracks:
+                self.tracksByID[track['id']] = track
+            for car in cars:
+                self.carsByID[car['id']] = car
+            for carClass in carClasses:
+                self.carClassesByID[carClass['id']] = carClass
+            for season in seasons:
+                self.seasonsByID[season['seriesid']] = season
+
+            logger.info('Loaded data for %i tracks, %i cars, %i car classes, and %i seasons.', len(self.tracksByID), len(self.carsByID), len(self.carClassesByID), len(self.seasonsByID))
 
         except AttributeError:
             logger.info('Unable to match track/car/season (one or more) listing regex in iRacing main page data.  It is possible that iRacing changed the JavaScript structure of their main page!  Oh no!')
-
 
 
 
