@@ -336,9 +336,13 @@ class IRacingData:
     def grabData(self, onlineOnly=True):
         """Refreshes data from iRacing JSON API."""
 
-        # Have we loaded the car/track/season data today?
+        # Have we loaded the car/track/season data recently?
         timeSinceSeasonDataFetch = sys.maxint if self.lastSeasonDataFetchTime is None else datetime.datetime.utcnow() - self.lastSeasonDataFetchTime
-        if timeSinceSeasonDataFetch >= self.SECONDS_BETWEEN_CACHING_SEASON_DATA:
+        shouldFetchSeasonData = timeSinceSeasonDataFetch >= self.SECONDS_BETWEEN_CACHING_SEASON_DATA
+
+        # TODO: Check if a new season has started more recently than the past 12 hours.
+
+        if shouldFetchSeasonData:
             logTime = 'forever' if self.lastSeasonDataFetchTime is None else '%s seconds' % timeSinceSeasonDataFetch
             logger.info('Fetching iRacing main page season data since it has been %s since we\'ve done so.', logTime)
             self.grabSeasonData()
