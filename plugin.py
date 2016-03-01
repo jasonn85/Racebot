@@ -413,6 +413,7 @@ class IRacingConnection(object):
         self.session = requests.Session()
 
         if len(username) == 0 or len(password) == 0:
+            logger.error('Username (%s) or password is missing', username)
             raise NoCredentialsException('Both username and password must be specified when creating an IracingConnection')
 
         self.username = username
