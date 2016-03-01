@@ -29,9 +29,20 @@
 ###
 
 from supybot.test import *
+import logging
+
+logger = logging.getLogger()
+logger.level = logging.DEBUG
+stream_handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(stream_handler)
 
 class RacebotTestCase(PluginTestCase):
     plugins = ('Racebot',)
+    conf.supybot.plugins.Racebot.iRacingUsername.setValue('testUser')
+    conf.supybot.plugins.Racebot.iRacingPassword.setValue('testPass')
+
+
+
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
