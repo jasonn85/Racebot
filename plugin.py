@@ -494,7 +494,7 @@ class IRacingConnection(object):
         """
         url = self.URL_MAIN_PAGE
         response = self.requestURL(url)
-        return response.text
+        return None if response is None else response.text
 
     def fetchDriverStatusJSON(self, friends=True, studied=True, onlineOnly=False):
         url = '%s?friends=%d&studied=%d&onlineOnly=%d' % (self.URL_GET_DRIVER_STATUS, friends, studied, onlineOnly)
