@@ -42,6 +42,7 @@ import logging
 import supybot.schedule as schedule
 import supybot.ircmsgs as ircmsgs
 import datetime
+import time
 import sqlite3
 
 logger = logging.getLogger('supybot')
@@ -308,7 +309,7 @@ class IRacingData:
     def grabSeasonData(self):
         """Refreshes season/car/track data from the iRacing main page Javascript"""
         rawMainPageHTML = self.iRacingConnection.fetchMainPageRawHTML()
-        self.lastSeasonDataFetchTime = datetime.datetime.utcnow()
+        self.lastSeasonDataFetchTime = time.time()
 
         try:
             trackJSON = re.search("var TrackListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
@@ -341,7 +342,7 @@ class IRacingData:
         """Refreshes data from iRacing JSON API."""
 
         # Have we loaded the car/track/season data recently?
-        timeSinceSeasonDataFetch = sys.maxint if self.lastSeasonDataFetchTime is None else datetime.datetime.utcnow() - self.lastSeasonDataFetchTime
+        timeSinceSeasonDataFetch = sys.maxint if self.lastSeasonDataFetchTime is None else time.time() - self.lastSeasonDataFetchTime
         shouldFetchSeasonData = timeSinceSeasonDataFetch >= self.SECONDS_BETWEEN_CACHING_SEASON_DATA
 
         # TODO: Check if a new season has started more recently than the past 12 hours.
