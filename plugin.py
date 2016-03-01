@@ -59,11 +59,13 @@ class Session(object):
     #  not actually join for three minutes?  Not many people.
     MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS = 180
 
-    def __init__(self, driverJson, previousSession=None):
+    def __init__(self, driverJson, racingData, previousSession=None):
         """
         @type previousSession: Session
+        @type racingData: IRacingData
         """
         self.driverJson = driverJson
+        self.racingData = racingData
         self.sessionId = driverJson['sessionId']
         self.subSessionId = driverJson.get('subSessionId')
         self.startTime = driverJson.get('startTime')
@@ -183,15 +185,17 @@ class Session(object):
 
 class Driver(object):
 
-    def __init__(self, json, db):
+    def __init__(self, json, db, racingData):
         """
         @type db: RacebotDB
+        @type racingData : IRacingData
         """
 
         self.db = db
         self.id = self.driverIDWithJson(json)
         self.name = json['name']
         self.sessionId = json.get('sessionId')
+        self.racingData = racingData
 
         self.updateWithJSON(json)
 
@@ -225,9 +229,9 @@ class Driver(object):
 
         if self._isInASessionWithJson(json):
             if self.currentSession is not None:
-                self.currentSession = Session(json, previousSession=self.currentSession)
+                self.currentSession = Session(json, self.racingData, previousSession=self.currentSession)
             else:
-                self.currentSession = Session(json)
+                self.currentSession = Session(json, self.racingData)
         else:
             self.currentSession = None
 
@@ -360,7 +364,7 @@ class IRacingData:
                 driver.updateWithJSON(racerJSON)
             else:
                 # This is the first time we've seen this driver
-                driver = Driver(racerJSON, self.db)
+                driver = Driver(racerJSON, self.db, self)
                 self.driversByID[driver.id] = driver
 
     def onlineDrivers(self):
