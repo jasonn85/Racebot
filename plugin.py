@@ -68,6 +68,7 @@ class Session(object):
         self.driverJson = driverJson
         self.racingData = racingData
         self.sessionId = driverJson['sessionId']
+        self.privateSessionId = driverJson.get('privateSessionId')
         self.subSessionId = driverJson.get('subSessionId')
         self.startTime = driverJson.get('startTime')
         self.trackId = driverJson.get('trackId')
@@ -162,7 +163,14 @@ class Session(object):
 
     @property
     def seasonDescription(self):
-        return self.racingData.seasonDescriptionForID(self.seasonId)
+        if self.seasonId > 0:
+            return self.racingData.seasonDescriptionForID(self.seasonId)
+
+        if self.privateSessionId > 0:
+            return 'Hosted'
+
+        return None
+
 
     @property
     def sessionDescription(self):
