@@ -208,6 +208,7 @@ class Driver(object):
         self.name = json['name']
         self.sessionId = json.get('sessionId')
         self.racingData = racingData
+        self.currentSession = None
 
         self.updateWithJSON(json)
 
