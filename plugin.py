@@ -32,6 +32,8 @@ import supybot.utils as utils
 import os
 from supybot.commands import *
 import requests
+import sys
+import re
 import json
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
@@ -40,6 +42,7 @@ import logging
 import supybot.schedule as schedule
 import supybot.ircmsgs as ircmsgs
 import datetime
+import time
 import sqlite3
 
 logger = logging.getLogger('supybot')
@@ -57,12 +60,15 @@ class Session(object):
     #  not actually join for three minutes?  Not many people.
     MINIMUM_TIME_BETWEEN_PRACTICE_DATA_TO_DETERMINE_RACE_SECONDS = 180
 
-    def __init__(self, driverJson, previousSession=None):
+    def __init__(self, driverJson, racingData, previousSession=None):
         """
         @type previousSession: Session
+        @type racingData: IRacingData
         """
         self.driverJson = driverJson
+        self.racingData = racingData
         self.sessionId = driverJson['sessionId']
+        self.privateSessionId = driverJson.get('privateSessionId')
         self.subSessionId = driverJson.get('subSessionId')
         self.startTime = driverJson.get('startTime')
         self.trackId = driverJson.get('trackId')
@@ -156,40 +162,61 @@ class Session(object):
         return self
 
     @property
+    def seasonDescription(self):
+        if self.seasonId > 0:
+            return self.racingData.seasonDescriptionForID(self.seasonId)
+
+        if self.privateSessionId > 0:
+            return 'Hosted'
+
+        return None
+
+
+    @property
     def sessionDescription(self):
         isRace = False
 
+        sessionType = 'Unknown Session Type'
+        seriesName = self.seasonDescription
+
         if self.eventTypeId == 1:
-            return 'Test Session'
+            sessionType = 'Test Session'
         elif self.eventTypeId == 2:
             if self.isPotentiallyPreRaceSession:
                 isRace = True
             else:
-                return 'Practice Session'
+                sessionType = 'Practice Session'
         elif self.eventTypeId == 3:
-            return 'Qualifying Session'
+            sessionType = 'Qualifying Session'
         elif self.eventTypeId == 4:
-            return 'Time Trial'
+            sessionType = 'Time Trial'
         elif self.eventTypeId == 5:
             isRace = True
 
         if isRace:
-            return 'Race'
+            sessionType = 'Race'
 
-        return 'Unknown Session Type'
+        if seriesName is not None:
+            return '%s %s' % (seriesName, sessionType)
+
+        return sessionType
+
 
 
 class Driver(object):
 
-    def __init__(self, json, db):
+    def __init__(self, json, db, racingData):
         """
         @type db: RacebotDB
+        @type racingData : IRacingData
         """
 
         self.db = db
         self.id = self.driverIDWithJson(json)
         self.name = json['name']
         self.sessionId = json.get('sessionId')
+        self.racingData = racingData
+        self.currentSession = None
 
         self.updateWithJSON(json)
 
@@ -223,9 +250,9 @@ class Driver(object):
 
         if self._isInASessionWithJson(json):
             if self.currentSession is not None:
-                self.currentSession = Session(json, previousSession=self.currentSession)
+                self.currentSession = Session(json, self.racingData, previousSession=self.currentSession)
             else:
-                self.currentSession = Session(json)
+                self.currentSession = Session(json, self.racingData)
         else:
             self.currentSession = None
 
@@ -281,15 +308,70 @@ class IRacingData:
     """Aggregates all driver and session data into dictionaries."""
 
     driversByID = {}
+    tracksByID = {}
+    carsByID = {}
+    carClassesByID = {}
+    seasonsByID = {}
+
+    SECONDS_BETWEEN_CACHING_SEASON_DATA = 43200     # 12 hours
 
     def __init__(self, iRacingConnection, db):
+        """
+        @type iRacingConnection : IRacingConnection
+        @type db : RacebotDB
+        """
         self.iRacingConnection = iRacingConnection
         self.db = db
+        self.lastSeasonDataFetchTime = None
 
         self.grabData(onlineOnly=False)
 
+    def grabSeasonData(self):
+        """Refreshes season/car/track data from the iRacing main page Javascript"""
+        rawMainPageHTML = self.iRacingConnection.fetchMainPageRawHTML()
+        self.lastSeasonDataFetchTime = time.time()
+
+        try:
+            trackJSON = re.search("var TrackListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+            carJSON = re.search("var CarListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+            carClassJSON = re.search("var CarClassListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+            seasonJSON = re.search("var SeasonListing\\s*=\\s*extractJSON\\('(.*)'\\);", rawMainPageHTML).group(1)
+
+            tracks = json.loads(trackJSON)
+            cars = json.loads(carJSON)
+            carClasses = json.loads(carClassJSON)
+            seasons = json.loads(seasonJSON)
+
+            for track in tracks:
+                self.tracksByID[track['id']] = track
+            for car in cars:
+                self.carsByID[car['id']] = car
+            for carClass in carClasses:
+                self.carClassesByID[carClass['id']] = carClass
+            for season in seasons:
+                self.seasonsByID[season['seriesid']] = season
+
+            logger.info('Loaded data for %i tracks, %i cars, %i car classes, and %i seasons.', len(self.tracksByID), len(self.carsByID), len(self.carClassesByID), len(self.seasonsByID))
+
+        except AttributeError:
+            logger.info('Unable to match track/car/season (one or more) listing regex in iRacing main page data.  It is possible that iRacing changed the JavaScript structure of their main page!  Oh no!')
+
+
+
     def grabData(self, onlineOnly=True):
         """Refreshes data from iRacing JSON API."""
+
+        # Have we loaded the car/track/season data recently?
+        timeSinceSeasonDataFetch = sys.maxint if self.lastSeasonDataFetchTime is None else time.time() - self.lastSeasonDataFetchTime
+        shouldFetchSeasonData = timeSinceSeasonDataFetch >= self.SECONDS_BETWEEN_CACHING_SEASON_DATA
+
+        # TODO: Check if a new season has started more recently than the past 12 hours.
+
+        if shouldFetchSeasonData:
+            logTime = 'forever' if self.lastSeasonDataFetchTime is None else '%s seconds' % timeSinceSeasonDataFetch
+            logger.info('Fetching iRacing main page season data since it has been %s since we\'ve done so.', logTime)
+            self.grabSeasonData()
+
         json = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
 
         # Populate drivers and sessions dictionaries
@@ -303,7 +385,7 @@ class IRacingData:
                 driver.updateWithJSON(racerJSON)
             else:
                 # This is the first time we've seen this driver
-                driver = Driver(racerJSON, self.db)
+                driver = Driver(racerJSON, self.db, self)
                 self.driversByID[driver.id] = driver
 
     def onlineDrivers(self):
@@ -316,10 +398,16 @@ class IRacingData:
 
         return drivers
 
+    def seasonDescriptionForID(self, seasonID):
+        if seasonID in self.seasonsByID:
+            return self.seasonsByID[seasonID]['seriesshortname'].replace('+', ' ')
+
+        return None
 
 class IRacingConnection(object):
 
     URL_GET_DRIVER_STATUS = 'http://members.iracing.com/membersite/member/GetDriverStatus'
+    URL_MAIN_PAGE = 'http://members.iracing.com/membersite/member/Home.do'
 
     def __init__(self, username, password):
         self.session = requests.Session()
@@ -395,6 +483,17 @@ class IRacingConnection(object):
             return response
 
         return None
+
+    def fetchMainPageRawHTML(self):
+        """Fetches raw HTML that can be used to scrape various Javascript vars that list tracks/cars/series/etc
+
+        Note: It is arguable that the IRacingConnection should do this parsing itself as it does in fetchDriverStatusJSON.
+        The problem is that this one large network operation returns several distinct pieces of data that the IRacingData will care about.
+        Rather than return a messy dictionary or tuple, I'm just spewing the raw HTML and letting the caller do the parsing.
+        """
+        url = self.URL_MAIN_PAGE
+        response = self.requestURL(url)
+        return response.text
 
     def fetchDriverStatusJSON(self, friends=True, studied=True, onlineOnly=False):
         url = '%s?friends=%d&studied=%d&onlineOnly=%d' % (self.URL_GET_DRIVER_STATUS, friends, studied, onlineOnly)
@@ -585,7 +684,12 @@ class Racebot(callbacks.Plugin):
         onlineDriverNames = []
 
         for driver in onlineDrivers:
-            onlineDriverNames.append(driver.nameForPrinting())
+            name = driver.nameForPrinting()
+
+            if driver.currentSession is not None:
+                name += ' (%s)' % (driver.currentSession.sessionDescription)
+
+            onlineDriverNames.append(name)
 
         if len(onlineDriverNames) == 0:
             response = 'No one is racing'
