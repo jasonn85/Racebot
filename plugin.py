@@ -161,27 +161,38 @@ class Session(object):
         return self
 
     @property
+    def seasonDescription(self):
+        return self.racingData.seasonDescriptionForID(self.seasonId)
+
+    @property
     def sessionDescription(self):
         isRace = False
 
+        sessionType = 'Unknown Session Type'
+        seriesName = self.seasonDescription
+
         if self.eventTypeId == 1:
-            return 'Test Session'
+            sessionType = 'Test Session'
         elif self.eventTypeId == 2:
             if self.isPotentiallyPreRaceSession:
                 isRace = True
             else:
-                return 'Practice Session'
+                sessionType = 'Practice Session'
         elif self.eventTypeId == 3:
-            return 'Qualifying Session'
+            sessionType = 'Qualifying Session'
         elif self.eventTypeId == 4:
-            return 'Time Trial'
+            sessionType = 'Time Trial'
         elif self.eventTypeId == 5:
             isRace = True
 
         if isRace:
-            return 'Race'
+            sessionType = 'Race'
 
-        return 'Unknown Session Type'
+        if seriesName is not None:
+            return '%s %s' % (seriesName, sessionType)
+
+        return sessionType
+
 
 
 class Driver(object):
@@ -378,6 +389,11 @@ class IRacingData:
 
         return drivers
 
+    def seasonDescriptionForID(self, seasonID):
+        if seasonID in self.seasonsByID:
+            return self.seasonsByID[seasonID]['seriesshortname'].replace('+', ' ')
+
+        return None
 
 class IRacingConnection(object):
 
