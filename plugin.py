@@ -676,7 +676,12 @@ class Racebot(callbacks.Plugin):
         onlineDriverNames = []
 
         for driver in onlineDrivers:
-            onlineDriverNames.append(driver.nameForPrinting())
+            name = driver.nameForPrinting()
+
+            if driver.currentSession is not None:
+                name += ' (%s)' % (driver.currentSession.sessionDescription)
+
+            onlineDriverNames.append(name)
 
         if len(onlineDriverNames) == 0:
             response = 'No one is racing'
