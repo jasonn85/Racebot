@@ -329,6 +329,11 @@ class IRacingData:
     def grabSeasonData(self):
         """Refreshes season/car/track data from the iRacing main page Javascript"""
         rawMainPageHTML = self.iRacingConnection.fetchMainPageRawHTML()
+
+        if rawMainPageHTML is None:
+            logger.warning('Unable to fetch iRacing homepage data.')
+            return
+
         self.lastSeasonDataFetchTime = time.time()
 
         try:
@@ -373,6 +378,10 @@ class IRacingData:
             self.grabSeasonData()
 
         json = self.iRacingConnection.fetchDriverStatusJSON(onlineOnly=onlineOnly)
+
+        if json is None:
+            # This is already logged in fetchDriverStatusJSON
+            return
 
         # Populate drivers and sessions dictionaries
         for racerJSON in json["fsRacers"]:
@@ -499,6 +508,11 @@ class IRacingConnection(object):
     def fetchDriverStatusJSON(self, friends=True, studied=True, onlineOnly=False):
         url = '%s?friends=%d&studied=%d&onlineOnly=%d' % (self.URL_GET_DRIVER_STATUS, friends, studied, onlineOnly)
         response = self.requestURL(url)
+
+        if response is None:
+            logger.warning('Unable to fetch driver status from iRacing site.')
+            return None
+
         return json.loads(response.text)
 
 
