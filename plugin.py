@@ -35,6 +35,7 @@ import requests
 import sys
 import re
 import json
+import supybot.log as logger
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
@@ -44,8 +45,6 @@ import supybot.ircmsgs as ircmsgs
 import datetime
 import time
 import sqlite3
-
-logger = logging.getLogger('supybot')
 
 class NoCredentialsException(Exception):
     pass
