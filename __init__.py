@@ -59,6 +59,7 @@ reload(plugin) # In case we're being reloaded.
 
 if world.testing:
     import test
+    reload(test)
 
 Class = plugin.Class
 configure = config.configure
