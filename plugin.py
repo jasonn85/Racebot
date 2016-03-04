@@ -324,8 +324,6 @@ class IRacingData:
         self.db = db
         self.lastSeasonDataFetchTime = None
 
-        self.grabData(onlineOnly=False)
-
     def grabSeasonData(self):
         """Refreshes season/car/track data from the iRacing main page Javascript"""
         rawMainPageHTML = self.iRacingConnection.fetchMainPageRawHTML()
