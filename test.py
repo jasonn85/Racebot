@@ -43,7 +43,12 @@ def grabStockIracingHomepage(self):
         result = mainPage.read()
     return result
 
+def grabEmptyFriendsList(self, friends=True, studied=True, onlineOnly=False):
+    return None
+
+# Replace network operations with one that returns stock car/track data and one that returns no friends online
 IRacingConnection.fetchMainPageRawHTML = grabStockIracingHomepage
+IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
 
 class RacebotTestCase(PluginTestCase):
     plugins = ('Racebot',)
