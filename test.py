@@ -30,19 +30,28 @@
 
 from supybot.test import *
 import logging
+from plugin import IRacingConnection
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
 stream_handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(stream_handler)
 
+def grabStockIracingHomepage(self):
+    result = None
+    with open('plugins/Racebot/data.iRacingMainPage.txt', 'r') as mainPage:
+        result = mainPage.read()
+    return result
+
+IRacingConnection.fetchMainPageRawHTML = grabStockIracingHomepage
+
 class RacebotTestCase(PluginTestCase):
     plugins = ('Racebot',)
     conf.supybot.plugins.Racebot.iRacingUsername.setValue('testUser')
     conf.supybot.plugins.Racebot.iRacingPassword.setValue('testPass')
 
-
-
+    def setUp(self):
+        super(RacebotTestCase, self).setUp()
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
