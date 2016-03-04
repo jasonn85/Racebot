@@ -39,7 +39,7 @@ logger.addHandler(stream_handler)
 
 def grabStockIracingHomepage(self):
     result = None
-    with open('plugins/Racebot/data.iRacingMainPage.txt', 'r') as mainPage:
+    with open('Racebot/data/iRacingMainPage.txt', 'r') as mainPage:
         result = mainPage.read()
     return result
 
