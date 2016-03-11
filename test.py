@@ -56,10 +56,10 @@ class RacebotTestCase(PluginTestCase):
     conf.supybot.plugins.Racebot.iRacingUsername.setValue('testUser')
     conf.supybot.plugins.Racebot.iRacingPassword.setValue('testPass')
 
-    def testNoOneOnline(self):
+    def testRacersNoOneOnline(self):
         self.assertResponse('racers', Racebot.NO_ONE_ONLINE_RESPONSE)
 
-    def testSomeoneOnline(self):
+    def testRacersSomeoneOnline(self):
         def friendsListPrivateSession(self, friends=True, studied=True, onlineOnly=False):
             result = None
             with open('Racebot/data/GetDriverStatus-privateSession.txt', 'r') as friendsList:
@@ -75,5 +75,20 @@ class RacebotTestCase(PluginTestCase):
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
 
+    def testRacersSomeoneInRace(self):
+        def friendsListRaceInProgress(self, friends=True, studied=True, onlineOnly=False):
+            result = None
+            with open('Racebot/data/GetDriverStatus-publicRace.txt', 'r') as friendsList:
+                result = friendsList.read()
+            return json.loads(result)
+
+        try:
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            IRacingConnection.fetchDriverStatusJSON = friendsListRaceInProgress
+
+            self.assertRegexp('racers', 'Test Target \\([\\w\\s]*Race\\)')
+
+        finally:
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
