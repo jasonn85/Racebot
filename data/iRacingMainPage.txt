@@ -62,8 +62,8 @@
 		}
 	
     var js_sess_cred_srv = 'members.iracing.com/membersite/checksess';
-	var js_sess_creds = '7A11386EF83773B38CAD0524BCFC22592EA8FC945644EC4D699BE2736BCE9027';
-	var js_custid = 99826;
+	var js_sess_creds = 'AAABBBCCCDDDEEEFFF111222333444555666777888999000';
+	var js_custid = 1;
 	//If the user is a free member do not show the online chat area
 	
 	
@@ -579,7 +579,7 @@ function AC_GetArgs(args, ext, srcParamName, classid, mimeType){
 			
 			
 			// Populate the TeamMembership object
-			TeamMembership = [{"isAdmin":true,"isDefault":true,"teamName":"Team+Jason+Neel","teamID":-11723,"isOwner":true,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":99826}, {"isAdmin":true,"isDefault":false,"teamName":"Turn+One+Hiros","teamID":-11784,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":99826}, {"isAdmin":true,"isDefault":false,"teamName":"Rich+GT+gentlemen+drivers","teamID":-16592,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":99826}, {"isAdmin":true,"isDefault":true,"teamName":"Chivers+Chikanye+Racing","teamID":-10425,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":99826}, {"isAdmin":false,"isDefault":true,"teamName":"Sebastian+Winterflood","teamID":-15192,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":99826}];
+			TeamMembership = [{"isAdmin":true,"isDefault":true,"teamName":"Team+Jason+Neel","teamID":-11723,"isOwner":true,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":1}, {"isAdmin":true,"isDefault":false,"teamName":"Turn+One+Hiros","teamID":-11784,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":1}, {"isAdmin":true,"isDefault":false,"teamName":"Rich+GT+gentlemen+drivers","teamID":-16592,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":1}, {"isAdmin":true,"isDefault":true,"teamName":"Chivers+Chikanye+Racing","teamID":-10425,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":1}, {"isAdmin":false,"isDefault":true,"teamName":"Sebastian+Winterflood","teamID":-15192,"isOwner":false,"helmet":{"ll":20,"c3":"a5566c","hp":42,"c1":"000000","c2":"011906"},"displayName":"Jason+Neel","custID":1}];
 				
 			if (TeamMembership && TeamMembership.length) {
 				for (var k in TeamMembership) {
@@ -649,7 +649,7 @@ var SeriesGroupListing = extractJSON('{"NASCAR":1,"IndyCar":2}');
 decodeAllFields(SeriesGroupListing);
 var MemPrefsListing = extractJSON('{"license":{"licenseShown":1,"licenseTimeStamp":"1453498436469"},"racepanel":{"autolaunchOffsetTime":5,"autolaunch":false,"autoJoinReloadTimer":10000,"joinedID":0,"autolaunchpref":false},"global":{"racepanel_evttype":"2","low_activity_in_sim":"1","ShowNightMode":0},"leagues":{"showmyleagues":false},"teams":{},"tracks":{"showOwnedtracks":1,"showUnownedtracks":1},"tickers":[{"prefs":{"on":1},"name":"headlines"},{"prefs":{"excluded_datasets":[],"on":1},"name":"stats"},{"prefs":{"excluded_series":[],"evttype":5,"category":0,"on":0},"name":"sessions"}],"guide":{"show_pro_wc":"1","show_multiclass":"0","show_road":"1","hide_unpopulated":"0","show_pro":"1","show_mpr":"0","show_fixed":"0","show_oval":"1","show_rookie":"1","show_class_a":"1","show_toolbar":"1","hide_ineligible":"1","show_class_b":"1","show_class_c":"1","show_class_d":"1"},"whatshot":{"pdwc":1,"road":1,"tt":1,"sortDirection":1,"a":1,"op":1,"b":1,"c":1,"d":1,"hotToShow":1,"owned":0,"filterToggle":1,"maxShown":10,"qual":1,"p":1,"race":1,"r":1,"oval":1,"sortBy":1,"eligible":1,"switchView":1,"populated":1},"cars":{"showOwnedCars":1,"showRoadCars":0,"showOvalCars":1,"showUnownedCars":0},"widgets":{"widget_eventPlanner":1,"widget_status":1}}');
 decodeAllFields(MemPrefsListing);
-var MemBean = extractJSON('{"staff":0,"highestLicColor":"0153db","helmetURL":"http%3A%2F%2F127.0.0.1%3A32034%2Fhelmet.png%3Fsize%3D4%26pat%3D42%26lic%3D0153db%26colors%3D000000%2C011906%2Ca5566c","accountHasBeenPaid":true,"flags":0,"cci":{"number":"xxxxxxxxxxxx8160","type":"001","name":"Visa"},"ppbaInfo":{"preferPayPal":false},"displayName":"Jason+Neel","custid":99826,"currentSeries":{"catID":2},"clubID":32,"licenses":[{"srPrime":"4","srSub":"52","catID":1,"iRating":"2250","helmetsrc":"http%3A%2F%2F127.0.0.1%3A32034%2Fhelmet.png%3Fsize%3D1%26pat%3D42%26lic%3D0153db%26colors%3D000000%2C011906%2Ca5566c","name":"Class+A","licColor":"%230153db","ttRating":"1493","liclevel":20,"group":5},{"srPrime":"3","srSub":"26","catID":2,"iRating":"2241","helmetsrc":"http%3A%2F%2F127.0.0.1%3A32034%2Fhelmet.png%3Fsize%3D1%26pat%3D42%26lic%3D0153db%26colors%3D000000%2C011906%2Ca5566c","name":"Class+A","licColor":"%230153db","ttRating":"1801","liclevel":19,"group":5}],"region":"Region+3","dev":0,"helmetcolor":"42%2C000000%2C011906%2Ca5566c","suitcolor":"3%2C000000%2C011906%2Ca5566c","currentSeasonId":1474,"balance":"%2415.36","displayNameUTF8":"Jason%2BNeel","viewingSeasonId:":0}');
+var MemBean = extractJSON('{"staff":0,"highestLicColor":"0153db","helmetURL":"http%3A%2F%2F127.0.0.1%3A32034%2Fhelmet.png%3Fsize%3D4%26pat%3D42%26lic%3D0153db%26colors%3D000000%2C011906%2Ca5566c","accountHasBeenPaid":true,"flags":0,"cci":{"number":"xxxxxxxxxxxx8160","type":"001","name":"Visa"},"ppbaInfo":{"preferPayPal":false},"displayName":"Jason+Neel","custid":1,"currentSeries":{"catID":2},"clubID":32,"licenses":[{"srPrime":"4","srSub":"52","catID":1,"iRating":"2250","helmetsrc":"http%3A%2F%2F127.0.0.1%3A32034%2Fhelmet.png%3Fsize%3D1%26pat%3D42%26lic%3D0153db%26colors%3D000000%2C011906%2Ca5566c","name":"Class+A","licColor":"%230153db","ttRating":"1493","liclevel":20,"group":5},{"srPrime":"3","srSub":"26","catID":2,"iRating":"2241","helmetsrc":"http%3A%2F%2F127.0.0.1%3A32034%2Fhelmet.png%3Fsize%3D1%26pat%3D42%26lic%3D0153db%26colors%3D000000%2C011906%2Ca5566c","name":"Class+A","licColor":"%230153db","ttRating":"1801","liclevel":19,"group":5}],"region":"Region+3","dev":0,"helmetcolor":"42%2C000000%2C011906%2Ca5566c","suitcolor":"3%2C000000%2C011906%2Ca5566c","currentSeasonId":1474,"balance":"%2415.36","displayNameUTF8":"Jason%2BNeel","viewingSeasonId:":0}');
 decodeAllFields(MemBean);
 
 	// Invitationals
@@ -1402,7 +1402,7 @@ var ClubListing = extractJSON('[{"id":47,"shortclubname":"Asia"},{"id":18,"short
 decodeAllFields(ClubListing);
 
 
-var LeagueMembership = extractJSON('[{"owner":false,"driverNickname":"Manic+Jason","encodedLeagueName":"GoonCar+World+Series","leagueName":"GoonCar+World+Series","leagueID":897,"cacheUpdate":true,"carNumber":"28","displayName":"","custID":99826,"admin":false}]');
+var LeagueMembership = extractJSON('[{"owner":false,"driverNickname":"Manic+Jason","encodedLeagueName":"GoonCar+World+Series","leagueName":"GoonCar+World+Series","leagueID":897,"cacheUpdate":true,"carNumber":"28","displayName":"","custID":1,"admin":false}]');
 decodeAllFields(LeagueMembership);
 
 
@@ -1592,8 +1592,8 @@ IRACING.constants={
 	,JS_version:"2015.3030"
 	,ks:"members.iracing.com/membersite/getkeys"
 	,setupsrv:"members.iracing.com/membersite/getsetups"
-	,credentials:"customerid=99826&sess_cred=7A11386EF83773B38CAD0524BCFC22592EA8FC945644EC4D699BE2736BCE9027&sess_cred_srv=members.iracing.com/membersite/checksess"
-	,cred:"cmd=install&custid=99826&credentials=29FA051607B3718C25743B509196398EE864C8EAA8DC000372EC1C6CC05BDE0F&prefixdir="+escape("")
+	,credentials:"customerid=1&sess_cred=AAAABBBBBCCCCDDDFFFFFF3234234234234234234234&sess_cred_srv=members.iracing.com/membersite/checksess"
+	,cred:"cmd=install&custid=1&credentials=AAAABBBBBCCCCDDDFFFFFF3234234234234234234234&prefixdir="+escape("")
 	,category_road:2
 	,category_oval:1
 	,license_class_rookie:1
