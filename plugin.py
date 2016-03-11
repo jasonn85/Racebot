@@ -629,6 +629,7 @@ class Racebot(callbacks.Plugin):
     SCHEDULER_TASK_NAME = 'RacebotBroadcastSchedulerTask'
     SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
     DATABASE_FILENAME = 'racebot_db.sqlite3'
+    NO_ONE_ONLINE_RESPONSE = 'No one is racing :('
 
     def __init__(self, irc):
         self.__parent = super(Racebot, self)
@@ -704,7 +705,7 @@ class Racebot(callbacks.Plugin):
             onlineDriverNames.append(name)
 
         if len(onlineDriverNames) == 0:
-            response = 'No one is racing'
+            response = self.NO_ONE_ONLINE_RESPONSE
         else:
             response = 'Online racers: %s' % utils.str.commaAndify(onlineDriverNames)
 
