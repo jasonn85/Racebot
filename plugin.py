@@ -67,7 +67,9 @@ class Session(object):
         self.driverJson = driverJson
         self.racingData = racingData
         self.sessionId = driverJson['sessionId']
-        self.privateSessionId = driverJson.get('privateSessionId')
+        self.isHostedSession = driverJson.get('privateSession') is not None
+        self.isPrivateSession = False if self.isHostedSession is False else driverJson['privateSession'].get('pwdProtected')
+        self.hostedSessionName = None if not self.isHostedSession else driverJson['privateSession'].get('sessionName')
         self.subSessionId = driverJson.get('subSessionId')
         self.startTime = driverJson.get('startTime')
         self.trackId = driverJson.get('trackId')
@@ -165,7 +167,10 @@ class Session(object):
         if self.seasonId > 0:
             return self.racingData.seasonDescriptionForID(self.seasonId)
 
-        if self.privateSessionId > 0:
+        if self.isPrivateSession:
+            return 'Private'
+
+        if self.isHostedSession:
             return 'Hosted'
 
         return None

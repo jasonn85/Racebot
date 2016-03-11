@@ -60,7 +60,6 @@ class RacebotTestCase(PluginTestCase):
         self.assertResponse('racers', Racebot.NO_ONE_ONLINE_RESPONSE)
 
     def testSomeoneOnline(self):
-
         def friendsListPrivateSession(self, friends=True, studied=True, onlineOnly=False):
             result = None
             with open('Racebot/data/GetDriverStatus-privateSession.txt', 'r') as friendsList:
