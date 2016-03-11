@@ -31,7 +31,7 @@
 from supybot.test import *
 import logging
 import json
-from plugin import IRacingConnection
+from plugin import IRacingConnection, Racebot
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
