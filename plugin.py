@@ -381,7 +381,7 @@ class IRacingData:
             return
 
         # Populate drivers and sessions dictionaries
-        for racerJSON in json["fsRacers"]:
+        for racerJSON in json['fsRacers']:
             driverID = Driver.driverIDWithJson(racerJSON)
 
             # Check if we already have data for this driver to update
