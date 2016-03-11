@@ -30,7 +30,7 @@
 
 from supybot.test import *
 import logging
-from plugin import IRacingConnection
+from plugin import IRacingConnection, Racebot
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
@@ -49,6 +49,7 @@ def grabEmptyFriendsList(self, friends=True, studied=True, onlineOnly=False):
 # Replace network operations with one that returns stock car/track data and one that returns no friends online
 IRacingConnection.fetchMainPageRawHTML = grabStockIracingHomepage
 IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
+Racebot.DATABASE_FILENAME = ':memory:'
 
 class RacebotTestCase(PluginTestCase):
     plugins = ('Racebot',)
