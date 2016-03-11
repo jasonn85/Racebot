@@ -30,7 +30,8 @@
 
 from supybot.test import *
 import logging
-from plugin import IRacingConnection, Racebot
+import json
+from plugin import IRacingConnection
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
@@ -49,15 +50,31 @@ def grabEmptyFriendsList(self, friends=True, studied=True, onlineOnly=False):
 # Replace network operations with one that returns stock car/track data and one that returns no friends online
 IRacingConnection.fetchMainPageRawHTML = grabStockIracingHomepage
 IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
-Racebot.DATABASE_FILENAME = ':memory:'
 
 class RacebotTestCase(PluginTestCase):
     plugins = ('Racebot',)
     conf.supybot.plugins.Racebot.iRacingUsername.setValue('testUser')
     conf.supybot.plugins.Racebot.iRacingPassword.setValue('testPass')
 
-    def setUp(self):
-        super(RacebotTestCase, self).setUp()
+    def testNoOneOnline(self):
+        self.assertResponse('racers', Racebot.NO_ONE_ONLINE_RESPONSE)
+
+    def testSomeoneOnline(self):
+
+        def friendsListPrivateSession(self, friends=True, studied=True, onlineOnly=False):
+            result = None
+            with open('Racebot/data/GetDriverStatus-privateSession.txt', 'r') as friendsList:
+                result = friendsList.read()
+            return json.loads(result)
+
+        try:
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            IRacingConnection.fetchDriverStatusJSON = friendsListPrivateSession
+
+            self.assertNotRegexp('racers', re.escape(Racebot.NO_ONE_ONLINE_RESPONSE))
+
+        finally:
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
