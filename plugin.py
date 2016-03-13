@@ -106,6 +106,14 @@ class Session(object):
         return not self.__eq__(other)
 
     @property
+    def secondsUntilStart(self):
+        MILLISECONDS_PER_SECOND = 1000
+        now = time.time() * MILLISECONDS_PER_SECOND
+        millisecondsUntilStart = self.startTime - now
+        return millisecondsUntilStart / MILLISECONDS_PER_SECOND
+
+
+    @property
     def isPractice(self):
         """ Note: This is true also if this is a pre-race practice, automatic registration """
         return self.eventTypeId == 2
@@ -206,6 +214,31 @@ class Session(object):
             return '%s %s' % (seriesName, sessionType)
 
         return sessionType
+
+    @property
+    def sessionDescriptionWithTiming(self):
+        """ Includes "starting in x minutes" or "running for x minutes" in the session description"""
+        shortDescription = self.sessionDescription
+        secondsUntilStart = self.secondsUntilStart
+
+        startingOrRunning = 'starting in' if secondsUntilStart > 0 else 'running for'
+
+        absSecondsUntilStart = abs(secondsUntilStart)
+
+        SECONDS_PER_MINUTE = 60
+        MINUTES_PER_HOUR = 60
+        if absSecondsUntilStart > 7200
+            absHours = absSecondsUntilStart // SECONDS_PER_MINUTE // MINUTES_PER_HOUR
+            timeIntervalDescription = '%i hours' % (absHour,)
+        elif absSecondsUntilStart > 120:
+            absMinutes = absSecondsUntilStart // SECONDS_PER_MINUTE
+            timeIntervalDescription = '%i minutes' % (absMinutes,)
+        else:
+            timeIntervalDescription = '%i seconds' % (absSecondsUntilStart,)
+
+        timingDescription = '%s %s' % (startingOrRunning, timeIntervalDescription)
+        
+        return '%s %s' % (shortDescription, timingDescription)
 
 
 
