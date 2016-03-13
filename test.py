@@ -47,6 +47,18 @@ def grabStockIracingHomepage(self):
 def grabEmptyFriendsList(self, friends=True, studied=True, onlineOnly=False):
     return None
 
+def friendsListPrivateSession(self, friends=True, studied=True, onlineOnly=False):
+    result = None
+    with open('Racebot/data/GetDriverStatus-privateSession.txt', 'r') as friendsList:
+        result = friendsList.read()
+    return json.loads(result)
+
+def friendsListRaceInProgress(self, friends=True, studied=True, onlineOnly=False):
+    result = None
+    with open('Racebot/data/GetDriverStatus-publicRace.txt', 'r') as friendsList:
+        result = friendsList.read()
+    return json.loads(result)
+
 # Replace network operations with one that returns stock car/track data and one that returns no friends online
 IRacingConnection.fetchMainPageRawHTML = grabStockIracingHomepage
 IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
@@ -81,12 +93,6 @@ class RacebotTestCase(PluginTestCase):
         self.assertResponse('racers', Racebot.NO_ONE_ONLINE_RESPONSE)
 
     def testRacersSomeoneOnline(self):
-        def friendsListPrivateSession(self, friends=True, studied=True, onlineOnly=False):
-            result = None
-            with open('Racebot/data/GetDriverStatus-privateSession.txt', 'r') as friendsList:
-                result = friendsList.read()
-            return json.loads(result)
-
         try:
             oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
             IRacingConnection.fetchDriverStatusJSON = friendsListPrivateSession
@@ -97,17 +103,58 @@ class RacebotTestCase(PluginTestCase):
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
 
     def testRacersSomeoneInRace(self):
-        def friendsListRaceInProgress(self, friends=True, studied=True, onlineOnly=False):
-            result = None
-            with open('Racebot/data/GetDriverStatus-publicRace.txt', 'r') as friendsList:
-                result = friendsList.read()
-            return json.loads(result)
-
         try:
             oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
             IRacingConnection.fetchDriverStatusJSON = friendsListRaceInProgress
 
             self.assertRegexp('racers', 'testTarget \\([\\w\\s]*Race\\)')
+
+        finally:
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
+
+    def testBroadcastNoOneOnline(self):
+        try:
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
+
+            cb = self.irc.getCallback('Racebot')
+            """:type : Racebot"""
+            cb.iRacingData.grabData()
+            message = cb.broadcastMessageForChannel('testChannel')
+
+            self.assertIsNone(message)
+
+        finally:
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
+
+    def testBroadcastRaceInProgress(self):
+        try:
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            IRacingConnection.fetchDriverStatusJSON = friendsListPrivateSession
+
+            cb = self.irc.getCallback('Racebot')
+            """:type : Racebot"""
+            cb.iRacingData.grabData()
+            message = cb.broadcastMessageForChannel('testChannel')
+
+            self.assertRegexpMatches(message, '.*testTarget.*running for.*')
+
+        finally:
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
+
+    def testBroadcastingSettingsAllOff(self):
+        try:
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            IRacingConnection.fetchDriverStatusJSON = friendsListPrivateSession
+            channel = 'testSilentChannel'
+
+            cb = self.irc.getCallback('Racebot')
+            """:type : Racebot"""
+            cb.setRegistryValue('raceRegistrationAlerts', False, channel=channel)
+            cb.setRegistryValue('nonRaceRegistrationAlerts', False, channel=channel)
+            message = cb.broadcastMessageForChannel(channel)
+
+            self.assertIsNone(message)
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
