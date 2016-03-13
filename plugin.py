@@ -727,14 +727,14 @@ class Racebot(callbacks.Plugin):
                 if listOfEntriesForThisSession:
                     listOfEntriesForThisSession.append(session)
                 else:
-                    listOfEntriesForThisSession = [session]
+                    listOfEntriesForThisSession = [session,]
 
                 sessionsToBroadcastThisChannelBySessionID[session.sessionId] = listOfEntriesForThisSession
 
 
         # Now that we have a list of sessions, stringify them, aggregating users in each session
         sessionDescriptions = []
-        for (_, aSessionList) in sessionsToBroadcastThisChannelBySessionID:
+        for (_, aSessionList) in sessionsToBroadcastThisChannelBySessionID.items():
             sessionList = aSessionList
             """:type : List"""
 
