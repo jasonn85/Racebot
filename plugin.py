@@ -708,7 +708,7 @@ class Racebot(callbacks.Plugin):
         for (_, aDriver) in self.iRacingData.driversByID.items():
             driver = aDriver    # Lazy type hinting
             """:type : Driver"""
-            session = driver.currentSession()
+            session = driver.currentSession
             """:type : Session"""
 
             if session is None:
