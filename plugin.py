@@ -768,6 +768,8 @@ class Racebot(callbacks.Plugin):
         else:
             message = None
 
+        return message
+
     def doBroadcastTick(self, irc):
 
         # Refresh data
