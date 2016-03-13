@@ -83,6 +83,7 @@ class Session(object):
         # Maintain the oldest record we have of this user in this session
         if previousSession is not None and previousSession.subSessionId == self.subSessionId:
             self._oldestDataThisSession = previousSession.oldestDataThisSession
+            self.hasBeenBroadcasted = previousSession.hasBeenBroadcasted
 
             if previousSession.isPotentiallyPreRaceSession:
                 # If we have already established that this is a pre-race session, we do not need to perform any further logic
@@ -93,6 +94,7 @@ class Session(object):
         else:
             # This is our first data point for this session.  We have no idea if this is pre-race or not
             self._oldestDataThisSession = None
+            self.hasBeenBroadcasted = False
             self.isPotentiallyPreRaceSession = False
 
     def __eq__(self, other):
