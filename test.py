@@ -31,7 +31,7 @@
 from supybot.test import *
 import logging
 import json
-from plugin import IRacingConnection, Racebot
+from plugin import IRacingConnection, Racebot, Driver, RacebotDB
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
@@ -50,6 +50,27 @@ def grabEmptyFriendsList(self, friends=True, studied=True, onlineOnly=False):
 # Replace network operations with one that returns stock car/track data and one that returns no friends online
 IRacingConnection.fetchMainPageRawHTML = grabStockIracingHomepage
 IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
+
+def alwaysReturnTrue(self):
+    return True
+
+# By default, allow all queries for users for testing
+Driver.allowNickReveal = alwaysReturnTrue
+Driver.allowOnlineQuery = alwaysReturnTrue
+Driver.allowRaceAlerts = alwaysReturnTrue
+
+# Make all users with negative IDs return 'IrrelevantGuy' as name, all drivers with ID 1 return 'testTarget,' all other
+#  positive IDs return the real name
+def nicknamesForTest(self, driver):
+    if driver.id == 1:
+        return 'testTarget'
+
+    if driver.id <= 0:
+        return 'IrrelevantGuy'
+
+    return None
+
+RacebotDB.nickForDriver = nicknamesForTest
 
 class RacebotTestCase(PluginTestCase):
     plugins = ('Racebot',)
@@ -86,7 +107,7 @@ class RacebotTestCase(PluginTestCase):
             oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
             IRacingConnection.fetchDriverStatusJSON = friendsListRaceInProgress
 
-            self.assertRegexp('racers', 'Test Target \\([\\w\\s]*Race\\)')
+            self.assertRegexp('racers', 'testTarget \\([\\w\\s]*Race\\)')
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
