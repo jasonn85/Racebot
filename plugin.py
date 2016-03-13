@@ -67,6 +67,7 @@ class Session(object):
         self.driverJson = driverJson
         self.racingData = racingData
         self.sessionId = driverJson['sessionId']
+        self.driverID = Driver.driverIDWithJson(driverJson)
         self.isHostedSession = driverJson.get('privateSession') is not None
         self.isPrivateSession = False if self.isHostedSession is False else driverJson['privateSession'].get('pwdProtected')
         self.hostedSessionName = None if not self.isHostedSession else driverJson['privateSession'].get('sessionName')
