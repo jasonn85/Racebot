@@ -238,7 +238,7 @@ class Session(object):
             timeIntervalDescription = '%i seconds' % (absSecondsUntilStart,)
 
         timingDescription = '%s %s' % (startingOrRunning, timeIntervalDescription)
-        
+
         return '%s %s' % (shortDescription, timingDescription)
 
 
@@ -700,30 +700,83 @@ class Racebot(callbacks.Plugin):
         # Refresh data
         self.iRacingData.grabData()
 
-        # Loop through all drivers, looking for those in sessions
-        for (_, aDriver) in self.iRacingData.driversByID.items():
-            driver = aDriver    # After 15 minutes of struggling to get pycharm to recognize driver as a Driver object,
-                                #  this stupid reassignment to a redundant var made it happy.  <3 Python
-            """:type : Driver"""
-            session = driver.currentSession()
-            """:type : Session"""
+        # Loop through channels, each with a potentially different configuration on what to broadcast
+        for channel in irc.state.channels:
+            shouldBroadcastRaces = self.registryValue('raceRegistrationAlerts', channel)
+            shouldBroadcastNonRaceSessions = self.registryValue('nonRaceRegistrationAlerts', channel)
+            sessionsToBroadcastThisChannelBySessionID = {}
 
-            if session is None:
+            if not shouldBroadcastRaces and not shouldBroadcastNonRaceSessions:
+                # This channel doesn't want any broadcasts
                 continue
 
-            if not driver.allowOnlineQuery or not driver.allowRaceAlerts:
-                # This guy does not want to be spied
-                continue
+            # Loop through all drivers, keeping an array of sessions as appropriate
+            for (_, aDriver) in self.iRacingData.driversByID.items():
+                driver = aDriver    # Lazy type hinting
+                """:type : Driver"""
+                session = driver.currentSession()
+                """:type : Session"""
 
-            isRaceSession = session.isRaceOrPreRacePractice
+                if session is None:
+                    continue
 
-            for channel in irc.state.channels:
-                relevantConfigValue = 'raceRegistrationAlerts' if isRaceSession else 'nonRaceRegistrationAlerts'
-                shouldBroadcast = self.registryValue(relevantConfigValue, channel)
+                if not driver.allowOnlineQuery or not driver.allowRaceAlerts:
+                    # This guy does not want to be spied
+                    continue
+
+                isRaceSession = session.isRaceOrPreRacePractice
+                shouldBroadcast = shouldBroadcastRaces if isRaceSession else shouldBroadcastNonRaceSessions
 
                 if shouldBroadcast:
-                    message = '%s is registered for a %s' % (driver.nameForPrinting(), session.sessionDescription.lower())
-                    irc.queueMsg(ircmsgs.privmsg(channel, message))
+                    listOfEntriesForThisSession = sessionsToBroadcastThisChannelBySessionID.get(session.sessionId)
+
+                    if listOfEntriesForThisSession:
+                        listOfEntriesForThisSession.append(session)
+                    else:
+                        listOfEntriesForThisSession = [session]
+
+                    sessionsToBroadcastThisChannelBySessionID[session.sessionId] = listOfEntriesForThisSession
+
+
+            # Now that we have a list of sessions, print them, aggregating users in each session
+            sessionDescriptions = []
+            for (_, aSessionList) in sessionsToBroadcastThisChannelBySessionID:
+                sessionList = aSessionList
+                """:type : List"""
+
+                # Ensure that, for at least one of the drivers in this session, we have not yet broadcasted this session
+                alreadyBroadcastedForEveryone = True
+                for aSession in sessionList:
+                    session = aSession
+                    """:type: Session"""
+                    if not session.hasBeenBroadcasted:
+                        alreadyBroadcastedForEveryone = False
+                        break
+                if alreadyBroadcastedForEveryone:
+                    continue
+
+                driverNames = []
+                session = None
+                for aSession in sessionList:
+                    session = aSession
+                    """:type: Session"""
+                    driver = self.iRacingData.driversByID[session.driverID]
+                    drivers.append(driver.nameForPrinting)
+
+
+                sessionDescription = '[%s] %s' % (utils.str.commaAndify(driverNames), session.sessionDescriptionWithTiming)
+                sessionDescriptions.append(sessionDescription)
+
+            if len(sessionDescriptions) > 1:
+                message = ', '.join(sessionDescriptions)
+            elif len(sessionDescriptions) == 1
+                message = sessionDescriptions[0]
+            else:
+                message = None
+
+            if message:
+                irc.queueMsg(ircmsgs.privmsg(channel, message))
+
 
     def racers(self, irc, msg, args):
         """takes no arguments
