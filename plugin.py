@@ -755,7 +755,7 @@ class Racebot(callbacks.Plugin):
                 session = aSession
                 """:type: Session"""
                 driver = self.iRacingData.driversByID[session.driverID]
-                drivers.append(driver.nameForPrinting)
+                driverNames.append(driver.nameForPrinting())
 
 
             sessionDescription = '[%s] %s' % (utils.str.commaAndify(driverNames), session.sessionDescriptionWithTiming)
