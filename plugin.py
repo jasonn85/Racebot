@@ -230,7 +230,7 @@ class Session(object):
         MINUTES_PER_HOUR = 60
         if absSecondsUntilStart > 7200:
             absHours = absSecondsUntilStart // SECONDS_PER_MINUTE // MINUTES_PER_HOUR
-            timeIntervalDescription = '%i hours' % (absHour,)
+            timeIntervalDescription = '%i hours' % (absHours,)
         elif absSecondsUntilStart > 120:
             absMinutes = absSecondsUntilStart // SECONDS_PER_MINUTE
             timeIntervalDescription = '%i minutes' % (absMinutes,)
