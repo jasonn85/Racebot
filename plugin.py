@@ -653,7 +653,7 @@ class RacebotDB(object):
 
     def nickForDriver(self, driver):
         row = self._rowForDriver(driver)
-        return None if (row is None or 'nick' not in row) else row['nick']
+        return None if row is None else row['nick']
 
     def allowNickRevealForDriver(self, driver):
         row = self._rowForDriver(driver)
@@ -817,7 +817,7 @@ class Racebot(callbacks.Plugin):
         for driver in onlineDrivers:
             if not driver.allowOnlineQuery:
                 continue
-                
+
             name = driver.nameForPrinting()
 
             if driver.currentSession is not None:
