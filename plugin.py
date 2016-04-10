@@ -679,7 +679,7 @@ class Racebot(callbacks.Plugin):
     This should describe *how* to use this plugin."""
 
     SCHEDULER_TASK_NAME = 'RacebotBroadcastSchedulerTask'
-    SCHEDULER_INTERVAL_SECONDS = 300.0     # Every five minutes
+    SCHEDULER_INTERVAL_SECONDS = 150.0     # Every 2.5 minutes
     DATABASE_FILENAME = 'racebot_db.sqlite3'
     NO_ONE_ONLINE_RESPONSE = 'No one is racing :('
 
