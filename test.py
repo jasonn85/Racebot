@@ -82,6 +82,9 @@ def nicknamesForTest(self, driver):
 
     return None
 
+def noNicknames(self, driver):
+    return None
+
 RacebotDB.nickForDriver = nicknamesForTest
 
 class RacebotTestCase(PluginTestCase):
@@ -111,6 +114,26 @@ class RacebotTestCase(PluginTestCase):
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
+
+    def testBroadcastNoNickname(self):
+        try:
+            oldNickMethod = RacebotDB.nickForDriver
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            RacebotDB.nickForDriver = noNicknames
+            IRacingConnection.fetchDriverStatusJSON = grabEmptyFriendsList
+
+            cb = self.irc.getCallback('Racebot')
+            """:type : Racebot"""
+            cb.iRacingData.grabData()
+            messages = cb.broadcastMessagesForChannel('testChannel')
+
+            messageCount = len(messages) if messages else 0
+            self.assertIs(messageCount, 0)
+
+        finally:
+            RacebotDB.nickForDriver = oldNickMethod
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
+
 
     def testBroadcastNoOneOnline(self):
         try:
