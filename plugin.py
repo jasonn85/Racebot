@@ -695,10 +695,9 @@ class Racebot(callbacks.Plugin):
         schedule.removePeriodicEvent(self.SCHEDULER_TASK_NAME)
         self.__parent.die()
 
-    def broadcastMessageForChannel(self, channel):
+    def broadcastMessagesForChannel(self, channel):
         shouldBroadcastRaces = self.registryValue('raceRegistrationAlerts', channel)
         shouldBroadcastNonRaceSessions = self.registryValue('nonRaceRegistrationAlerts', channel)
-        sessionsToBroadcastThisChannelBySessionID = {}
 
         if not shouldBroadcastRaces and not shouldBroadcastNonRaceSessions:
             # This channel doesn't want any broadcasts
@@ -733,42 +732,46 @@ class Racebot(callbacks.Plugin):
 
 
         # Now that we have a list of sessions, stringify them, aggregating users in each session
-        sessionDescriptions = []
+        messages = []
         for (_, aSessionList) in sessionsToBroadcastThisChannelBySessionID.items():
             sessionList = aSessionList
             """:type : List"""
+            oneSession = sessionList[0]
+            """:type : Session"""
+            sessionDescription = oneSession.sessionDescriptionWithTiming
 
             # Ensure that, for at least one of the drivers in this session, we have not yet broadcasted this session
-            alreadyBroadcastedForEveryone = True
+            alreadyBroadcastedAllRegistrants = True
             for aSession in sessionList:
                 session = aSession
                 """:type: Session"""
                 if not session.hasBeenBroadcasted:
-                    alreadyBroadcastedForEveryone = False
+                    alreadyBroadcastedAllRegistrants = False
                     break
-            if alreadyBroadcastedForEveryone:
+            if alreadyBroadcastedAllRegistrants:
                 continue
 
-            driverNames = []
+            newDriverNames = []
+            oldDriverNames = []
             session = None
             for aSession in sessionList:
                 session = aSession
                 """:type: Session"""
                 driver = self.iRacingData.driversByID[session.driverID]
-                driverNames.append(driver.nameForPrinting())
+                appropriateNameList = oldDriverNames if session.hasBeenBroadcasted else newDriverNames
+                appropriateNameList.append(driver.nameForPrinting())
 
+            newDriversString = utils.str.commaAndify(newDriverNames)
+            oldDriversString = utils.str.commaAndify(oldDriverNames) if len(oldDriverNames) > 0 else None
 
-            sessionDescription = '[%s] %s' % (utils.str.commaAndify(driverNames), session.sessionDescriptionWithTiming)
-            sessionDescriptions.append(sessionDescription)
+            message = '%s registered for %s' % (newDriversString, sessionDescription)
 
-        if len(sessionDescriptions) > 1:
-            message = ', '.join(sessionDescriptions)
-        elif len(sessionDescriptions) == 1:
-            message = sessionDescriptions[0]
-        else:
-            message = None
+            if oldDriversString:
+                message += ', joining %s' % (oldDriversString,)
 
-        return message
+            messages.append(message)
+
+        return messages
 
     def doBroadcastTick(self, irc):
 
@@ -777,10 +780,11 @@ class Racebot(callbacks.Plugin):
 
         # Loop through channels, each with a potentially different configuration on what to broadcast
         for channel in irc.state.channels:
-            message = self.broadcastMessageForChannel(channel)
+            messages = self.broadcastMessagesForChannel(channel)
 
-            if message:
-                irc.queueMsg(ircmsgs.privmsg(channel, message))
+            if messages:
+                for message in messages:
+                    irc.queueMsg(ircmsgs.privmsg(channel, message))
 
 
     def racers(self, irc, msg, args):
