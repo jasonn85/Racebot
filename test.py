@@ -120,9 +120,9 @@ class RacebotTestCase(PluginTestCase):
             cb = self.irc.getCallback('Racebot')
             """:type : Racebot"""
             cb.iRacingData.grabData()
-            message = cb.broadcastMessageForChannel('testChannel')
+            messages = cb.broadcastMessagesForChannel('testChannel')
 
-            self.assertIsNone(message)
+            self.assertIsNone(messages)
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
@@ -135,9 +135,9 @@ class RacebotTestCase(PluginTestCase):
             cb = self.irc.getCallback('Racebot')
             """:type : Racebot"""
             cb.iRacingData.grabData()
-            message = cb.broadcastMessageForChannel('testChannel')
+            messages = cb.broadcastMessagesForChannel('testChannel')
 
-            self.assertRegexpMatches(message, '.*testTarget.*running for.*')
+            self.assertRegexpMatches(messages[0], '.*testTarget.*running for.*')
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
@@ -152,9 +152,9 @@ class RacebotTestCase(PluginTestCase):
             """:type : Racebot"""
             cb.setRegistryValue('raceRegistrationAlerts', False, channel=channel)
             cb.setRegistryValue('nonRaceRegistrationAlerts', False, channel=channel)
-            message = cb.broadcastMessageForChannel(channel)
+            messages = cb.broadcastMessagesForChannel(channel)
 
-            self.assertIsNone(message)
+            self.assertIsNone(messages)
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
