@@ -239,7 +239,7 @@ class Session(object):
 
         timingDescription = '%s %s' % (startingOrRunning, timeIntervalDescription)
 
-        return '%s %s' % (shortDescription, timingDescription)
+        return '%s, %s' % (shortDescription, timingDescription)
 
 
 
