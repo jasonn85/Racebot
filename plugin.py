@@ -698,6 +698,7 @@ class Racebot(callbacks.Plugin):
     def broadcastMessagesForChannel(self, channel):
         shouldBroadcastRaces = self.registryValue('raceRegistrationAlerts', channel)
         shouldBroadcastNonRaceSessions = self.registryValue('nonRaceRegistrationAlerts', channel)
+        sessionsToBroadcastThisChannelBySessionID = {}
 
         if not shouldBroadcastRaces and not shouldBroadcastNonRaceSessions:
             # This channel doesn't want any broadcasts
