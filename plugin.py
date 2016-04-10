@@ -815,6 +815,9 @@ class Racebot(callbacks.Plugin):
         onlineDriverNames = []
 
         for driver in onlineDrivers:
+            if not driver.allowOnlineQuery:
+                continue
+                
             name = driver.nameForPrinting()
 
             if driver.currentSession is not None:
