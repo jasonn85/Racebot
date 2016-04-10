@@ -122,7 +122,8 @@ class RacebotTestCase(PluginTestCase):
             cb.iRacingData.grabData()
             messages = cb.broadcastMessagesForChannel('testChannel')
 
-            self.assertIsNone(messages)
+            messageCount = len(messages) if messages else 0
+            self.assertIs(messageCount, 0)
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
@@ -154,7 +155,8 @@ class RacebotTestCase(PluginTestCase):
             cb.setRegistryValue('nonRaceRegistrationAlerts', False, channel=channel)
             messages = cb.broadcastMessagesForChannel(channel)
 
-            self.assertIsNone(messages)
+            messageCount = len(messages) if messages else 0
+            self.assertIs(messageCount, 0)
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
