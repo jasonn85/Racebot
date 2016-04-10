@@ -257,6 +257,7 @@ class Driver(object):
         self.sessionId = json.get('sessionId')
         self.racingData = racingData
         self.currentSession = None
+        """:type : Session"""
 
         self.updateWithJSON(json)
 
@@ -434,6 +435,16 @@ class IRacingData:
                 # This is the first time we've seen this driver
                 driver = Driver(racerJSON, self.db, self)
                 self.driversByID[driver.id] = driver
+
+    def setAllHasBeenBroadcastedFlags(self, value = True):
+        """Called once sessions have been broadcasted to set the flag and prevent duplicate broadcasts later.
+        Supports manual setting of the value for testing"""
+
+        for (_, aDriver) in self.driversByID.items():
+            driver = aDriver
+            """:type : Driver"""
+            if driver.currentSession:
+                driver.currentSession.hasBeenBroadcasted = value
 
     def onlineDrivers(self):
         """Returns an array of all online Driver()s"""
@@ -786,6 +797,9 @@ class Racebot(callbacks.Plugin):
             if messages:
                 for message in messages:
                     irc.queueMsg(ircmsgs.privmsg(channel, message))
+
+        # Set flag to prevent these sessions from being rebroadcasted
+        self.iRacingData.setAllHasBeenBroadcastedFlags()
 
 
     def racers(self, irc, msg, args):

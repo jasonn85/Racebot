@@ -134,7 +134,6 @@ class RacebotTestCase(PluginTestCase):
             RacebotDB.nickForDriver = oldNickMethod
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
 
-
     def testBroadcastNoOneOnline(self):
         try:
             oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
@@ -162,6 +161,29 @@ class RacebotTestCase(PluginTestCase):
             messages = cb.broadcastMessagesForChannel('testChannel')
 
             self.assertRegexpMatches(messages[0], '.*testTarget.*running for.*')
+
+        finally:
+            IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
+
+    def testNoDuplicateBroadcast(self):
+        try:
+            oldFriendsListMethod = IRacingConnection.fetchDriverStatusJSON
+            IRacingConnection.fetchDriverStatusJSON = friendsListPrivateSession
+
+            cb = self.irc.getCallback('Racebot')
+            """:type : Racebot"""
+            cb.iRacingData.grabData()
+            messagesIncludingFirstBroadcast = cb.broadcastMessagesForChannel('testChannel')
+            cb.iRacingData.setAllHasBeenBroadcastedFlags()
+            expectedEmptyMessages = cb.broadcastMessagesForChannel('testChannel')
+
+            secondMessageCount = len(expectedEmptyMessages) if expectedEmptyMessages else 0
+
+            self.assertRegexpMatches(messagesIncludingFirstBroadcast[0], '.*testTarget.*')
+            self.assertIs(secondMessageCount, 0)
+
+            # Clear the flags for any future tests
+            cb.iRacingData.setAllHasBeenBroadcastedFlags(value=False)
 
         finally:
             IRacingConnection.fetchDriverStatusJSON = oldFriendsListMethod
